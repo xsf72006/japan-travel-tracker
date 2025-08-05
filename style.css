@@ -1,0 +1,459 @@
+/* Japan Travel Tracker Styles */
+
+:root {
+    --never-been: #ffffff;
+    --visited: #3498db;
+    --stayed: #e74c3c;
+    --road-trip: #ffc107;
+    --hover-color: #ff6b6b;
+    --border-color: #2c3e50;
+}
+
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Navigation */
+.navbar-brand {
+    font-weight: 600;
+}
+
+/* Language Dropdown */
+.dropdown-menu {
+    border-radius: 8px;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    padding: 0.5rem 0;
+}
+
+.dropdown-item {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    transition: background-color 0.2s ease;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+.dropdown-item:active {
+    background-color: #007bff;
+}
+
+/* Flag icons placeholder (in case flag-icon library is not loaded) */
+.flag-icon {
+    width: 16px;
+    height: 12px;
+    background-color: #dee2e6;
+    border-radius: 2px;
+    display: inline-block;
+}
+
+/* Map Container - Safari-compatible centering with expanded space */
+#japan-map-container {
+    text-align: center;
+    min-height: 600px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    overflow: hidden;
+    padding: 0.5rem;
+}
+
+#japan-svg {
+    display: inline-block;
+    vertical-align: middle;
+    max-width: 100%;
+    max-height: 700px;
+    width: auto;
+    height: auto;
+}
+
+/* Legacy class for compatibility */
+.geolonia-svg-map {
+    max-width: 100%;
+    max-height: 600px;
+    width: auto;
+    height: auto;
+}
+
+/* Prefecture Styles - Using JapanEx approach with SVG attributes */
+.prefecture {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.prefecture:hover {
+    filter: brightness(0.9);
+}
+
+/* Road trip animation for dashed borders */
+@keyframes dash-animation {
+    0% { stroke-dashoffset: 0; }
+    100% { stroke-dashoffset: -8; }
+}
+
+/* Legend */
+.legend-item {
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+}
+
+.legend-color {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    margin-right: 10px;
+    border: 1px solid var(--border-color);
+}
+
+.legend-color.never-been {
+    background-color: var(--never-been);
+    border: 1px solid var(--border-color);
+}
+
+.legend-color.visited {
+    background-color: var(--visited);
+}
+
+.legend-color.stayed {
+    background-color: var(--stayed);
+}
+
+.legend-color.road-trip {
+    background-color: var(--visited);
+    border: 2px dashed var(--border-color);
+    background-image: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 2px,
+        var(--border-color) 2px,
+        var(--border-color) 4px
+    );
+}
+
+/* Statistics */
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+}
+
+/* Prefecture Info Panel */
+#prefecture-info {
+    min-height: 100px;
+}
+
+.prefecture-visits {
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: #f8f9fa;
+}
+
+.visit-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 5px 0;
+    border-bottom: 1px solid #dee2e6;
+    gap: 10px;
+}
+
+.visit-item:last-child {
+    border-bottom: none;
+}
+
+.visit-info {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+    flex: 1;
+    min-height: 28px;
+}
+
+.visit-level {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: white;
+}
+
+.visit-level.visited {
+    background-color: var(--visited);
+}
+
+.visit-level.stayed {
+    background-color: var(--stayed);
+}
+
+.visit-date {
+    font-size: 0.85rem;
+    color: #6c757d;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    min-height: 28px;
+}
+
+.road-trip-badge {
+    background-color: var(--road-trip);
+    color: #212529;
+    padding: 1px 6px;
+    border-radius: 8px;
+    font-size: 0.7rem;
+    margin-left: 5px;
+}
+
+/* Timeline Styles */
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #dee2e6;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+    background: white;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -22px;
+    top: 20px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--visited);
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.timeline-item.stayed::before {
+    background: var(--stayed);
+}
+
+.timeline-item.road-trip::before {
+    background: var(--road-trip);
+}
+
+.timeline-date {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 5px;
+}
+
+.timeline-prefecture {
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 5px;
+}
+
+.timeline-details {
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .navbar {
+        padding: 0.5rem 1rem;
+    }
+    
+    .navbar-brand {
+        font-size: 1.1rem;
+    }
+    
+    .navbar-nav {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+    
+    .navbar-nav .btn {
+        font-size: 0.8rem;
+        padding: 0.375rem 0.5rem;
+    }
+    
+    .container-fluid {
+        padding: 0.5rem;
+    }
+    
+    .col-lg-8, .col-lg-4 {
+        margin-bottom: 1rem;
+    }
+    
+    #japan-map-container {
+        min-height: 300px;
+        padding: 0.5rem;
+    }
+    
+    .geolonia-svg-map, .japan-map {
+        max-height: 350px;
+    }
+    
+    .card {
+        margin-bottom: 1rem;
+    }
+    
+    .modal-dialog {
+        margin: 1rem 0.5rem;
+    }
+    
+    .stat-item {
+        font-size: 0.85rem;
+    }
+    
+    .legend-item {
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .navbar-nav {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .navbar-nav .btn {
+        width: 100%;
+        margin-bottom: 0.25rem;
+    }
+    
+    #japan-map-container {
+        min-height: 250px;
+        padding: 0.25rem;
+    }
+    
+    .geolonia-svg-map, .japan-map {
+        max-height: 280px;
+    }
+    
+    .timeline {
+        padding-left: 20px;
+    }
+    
+    .timeline::before {
+        left: 10px;
+    }
+    
+    .timeline-item::before {
+        left: -16px;
+        width: 8px;
+        height: 8px;
+    }
+}
+
+/* Cards */
+.card {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    border-radius: 12px;
+}
+
+.card-header {
+    background-color: #ffffff;
+    border-bottom: 1px solid #e9ecef;
+    border-radius: 12px 12px 0 0 !important;
+}
+
+/* Modal Enhancements */
+.modal-content {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+    border-bottom: 1px solid #e9ecef;
+    border-radius: 12px 12px 0 0;
+}
+
+/* Form Enhancements */
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+}
+
+/* Button Enhancements */
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+}
+
+/* Utility Classes */
+.text-small {
+    font-size: 0.875rem;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
+/* Loading Animation */
+.loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Tooltip for prefecture names */
+.prefecture-tooltip {
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.prefecture-tooltip.show {
+    opacity: 1;
+}
