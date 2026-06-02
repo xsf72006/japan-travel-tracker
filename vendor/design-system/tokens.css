@@ -1,0 +1,376 @@
+/* ============================================================
+   Personal Design System — v1.1
+   ============================================================
+   Maintainer: Sefer · Hong Kong · 2026
+   Companion: brand-guidelines.md (intent) + decisions-v0.2.md,
+   decisions-v0.3.md, decisions-v0.4.md (changelog)
+   Assembled site: "Design System.html" — the navigable v1.0 reference.
+
+   v1.0 — the brand/content layer AND the full product-UI layer are
+        now locked together. Product layer (signed off 2026-05-30):
+        surfaces & semantics, core components (primary = ink fill),
+        app shell + global/connection status, overlays & settings
+        (scrim, no shadow), iconography (1.5px square line set).
+        See §PRODUCT-UI below + decisions-v0.4.md.
+        Swift mapping DELIVERED: see swift/ (cross-platform iOS + macOS).
+   v1.1 — self-hosted Latin fonts; + categorical chart palette
+        (--chart-1..6, light + Espresso) for product/data surfaces.
+        Chart palette also mirrored in swift/ (DSPalette) for cross-platform parity.
+   v0.3 added the Espresso dark theme (derived, not inverted).
+   v0.2 superseded v0.1. Every value below was selected through
+   like-for-like exploration and is now LOCKED unless noted.
+   Always reference var(--token); never hard-code a value.
+   ============================================================ */
+
+/* Self-hosted Latin fonts (v1.1). 繁體中文 → PingFang HK system fallback
+   (see --font-zh). Newsreader / Noto Serif TC are not vendored — add to
+   build_fonts.py + fonts.css if a long-form surface ever needs them. */
+@import url('./fonts.css');
+
+:root {
+
+  /* ──────────────────────────────────────────────────────────
+     COLOR  — light theme (default) + Espresso dark theme below
+     ────────────────────────────────────────────────────────── */
+
+  /* Paper & ink — the chassis */
+  --color-paper:           #f6f4ef;  /* warm cream — primary background (LOCKED) */
+  --color-paper-elevated:  #faf9f5;  /* cards, panels — elevation by tone, not shadow */
+  --color-code-bg:         #efece3;  /* code surfaces — a touch deeper than paper */
+  --color-ink:             #15140e;  /* warm near-black — primary text (LOCKED) */
+  --color-ink-soft:        #6a6862;  /* utility text, metadata */
+  --color-ink-softer:      #b5b2a8;  /* hint text, disabled, placeholder */
+
+  /* Rules (dividers) */
+  --color-rule:            #1a1a1a;  /* strong rule — use sparingly */
+  --color-rule-soft:       #d8d3c6;  /* hairline — the default border & divider */
+
+  /* ──── ACCENT — rust (LOCKED v0.2) ────────────────────────
+     The single non-neutral colour. An INTERACTION SIGNAL only —
+     hover, focus, active, checked, and rare emphasis. Never
+     decoration. If removed entirely, the design still holds.
+     Prior candidates kept for reference, commented out.        */
+  --color-accent:          #9c4631;  /* RUST — deep, grounded warm red */
+  --color-accent-deep:     #843a28;  /* pressed / deeper rust */
+  /* --color-accent: #a64b2a;   sienna  (v0.1 baseline) */
+  /* --color-accent: #5c1f1f;   oxblood */
+  /* --color-accent: #1f3a52;   slate   */
+  /* --color-accent: #2a2520;   mono    */
+
+
+  /* ──────────────────────────────────────────────────────────
+     TYPOGRAPHY  (LOCKED v0.2)
+     ────────────────────────────────────────────────────────── */
+
+  /* Families */
+  --font-sans:      'Hanken Grotesk', system-ui, sans-serif;       /* display + text chassis */
+  --font-zh:        'Noto Sans HK', 'PingFang HK', sans-serif;     /* 繁體中文 — HK glyph forms */
+  --font-serif:     'Newsreader', Georgia, serif;                  /* reading register — long-form only */
+  --font-zh-serif:  'Noto Serif TC', serif;                        /* 中文 reading register */
+  --font-mono:      'JetBrains Mono', ui-monospace, monospace;     /* utility labels, code */
+
+  /* Type scale (1.25 modular, hand-tuned endpoints) */
+  --text-xs:        0.6875rem; /* 11px — mono utility caps */
+  --text-sm:        0.8125rem; /* 13px — small body, captions */
+  --text-base:      1rem;      /* 16px — body */
+  --text-lg:        1.125rem;  /* 18px — emphasized body / standfirst */
+  --text-xl:        1.5rem;    /* 24px — small heading */
+  --text-2xl:       2rem;      /* 32px — heading */
+  --text-3xl:       3rem;      /* 48px — ARTICLE TITLE (multi-word) */
+  --text-4xl:       4.5rem;    /* 72px — large heading */
+  --text-display:   clamp(4.5rem, 11vw, 6.75rem); /* 72–108px — WORDMARK / hero, 1–2 words */
+
+  /* Weights — Hanken */
+  --weight-light:    300;  /* large display only */
+  --weight-regular:  400;  /* default body */
+  --weight-medium:   500;  /* emphasis, links, nav */
+  --weight-semibold: 600;  /* headings, wordmark */
+
+  /* Tracking */
+  --tracking-tighter: -0.03em; /* display / wordmark */
+  --tracking-tight:   -0.02em; /* large headings */
+  --tracking-normal:   0;
+  --tracking-wide:     0.04em; /* 中文 body */
+  --tracking-wider:    0.12em; /* mono utility caps */
+  --tracking-widest:   0.18em; /* mono eyebrows */
+
+  /* Line heights */
+  --leading-tight:   0.92;  /* display, headings */
+  --leading-snug:    1.3;
+  --leading-normal:  1.55;  /* EN body */
+  --leading-loose:   1.95;  /* 中文 body — CJK needs ~25% more */
+
+  /* EN + 中文 pairing rule (see brand-guidelines §type):
+     set 中文 one weight LIGHTER than the EN beside it,
+     +0.04em tracking, ~25% more line-height. */
+
+  /* Reading / editorial surfaces (long-form) — added after the
+     writing-page pressure test. */
+  --measure-reading:        680px;    /* ~66ch at 20px — long-form column */
+  --text-reading:           1.25rem;  /* 20px — serif body reading size */
+  --leading-reading:        1.62;
+  --text-article-headline:  clamp(2.5rem, 6.5vw, 3.75rem); /* 40–60px serif headline */
+  --text-article-sub:       1.9375rem; /* 31px serif subhead */
+  /* Article headline & subhead use var(--font-serif); EN body uses
+     var(--font-serif) at --text-reading; 中文 body uses var(--font-zh-serif). */
+
+
+  /* ──────────────────────────────────────────────────────────
+     SPACING — modular (0.25rem base). Default density: GENEROUS.
+     Product/data-dense surfaces use the COMPACT gear: step
+     vertical rhythm down ~25% (use --space-16 where generous
+     would use --space-24). See changelog.
+     ────────────────────────────────────────────────────────── */
+  --space-1:  0.25rem;  /*  4px */
+  --space-2:  0.5rem;   /*  8px */
+  --space-3:  0.75rem;  /* 12px */
+  --space-4:  1rem;     /* 16px — base */
+  --space-6:  1.5rem;   /* 24px */
+  --space-8:  2rem;     /* 32px */
+  --space-12: 3rem;     /* 48px */
+  --space-16: 4rem;     /* 64px */
+  --space-24: 6rem;     /* 96px */
+  --space-32: 8rem;     /* 128px */
+
+
+  /* ──────────────────────────────────────────────────────────
+     LAYOUT
+     ────────────────────────────────────────────────────────── */
+  --container-max:        1180px;
+  --container-padding:    clamp(28px, 6vw, 80px);
+
+
+  /* ──────────────────────────────────────────────────────────
+     MOTION — one orchestrated page-load entrance, not scattered
+     micro-interactions. Functional state transitions only.
+     ────────────────────────────────────────────────────────── */
+  --ease-out:       cubic-bezier(0.2, 0.8, 0.2, 1);
+  --duration-fast:  160ms;  /* state transitions (hover/focus) */
+  --duration-base:  350ms;
+  --duration-slow:  750ms;  /* page-load rise */
+
+
+  /* ──────────────────────────────────────────────────────────
+     BORDERS & ELEVATION — Swiss bones
+     ────────────────────────────────────────────────────────── */
+  --border-width:      1px;     /* default — uses --color-rule-soft */
+  --border-width-bold: 2px;
+  --radius:            0;       /* DEFAULT — square corners everywhere */
+  --radius-sm:         2px;     /* reserved, rare; never exceed 4px.
+                                  Sole product exception: the radio control,
+                                  which is round for affordance (see PRODUCT-UI). */
+  /* elevation: NONE. No drop shadows, glass, or neumorphism.
+     Depth = --color-paper-elevated + a 1px hairline.
+     Focus = ink border + inset 2px rust underline (never a glow). */
+
+
+  /* ──────────────────────────────────────────────────────────
+     PRODUCT-UI LAYER  (v1.0 — brand + product locked together)
+     The token set app patterns build on. Signed off 2026-05-30
+     via like-for-like review (see decisions-v0.4.md). Light here;
+     dark mirrors in the Espresso block below.
+     ────────────────────────────────────────────────────────── */
+
+  /* Surface elevation — 5 named levels, warm-tinted, outer→inner
+     lightens. Depth by tone, never shadow. (5 was enough; 7 rejected.) */
+  --s-window:      #efece4;  /* app canvas — deepest */
+  --s-sidebar:     #f1efe8;  /* chrome panels */
+  --s-surface:     #f6f4ef;  /* content area = brand paper */
+  --s-elevated:    #fbfaf6;  /* cards, popovers, menus */
+  --s-input:       #fffefb;  /* fields — warm near-white, not pure (LOCKED) */
+  --s-hover:       rgba(21,20,14,0.045);  /* overlay on hover */
+  --s-active:      rgba(156,70,49,0.10);  /* accent-tinted selection */
+  --border:        #ddd8cc;  /* default hairline on product surfaces */
+  --border-strong: #c7c1b2;  /* emphasized hairline / control edge */
+
+  /* Text greyscale — by ROLE, 4 levels */
+  --t1: #15140e;  /* primary / body / headings */
+  --t2: #4a473e;  /* secondary copy, descriptions */
+  --t3: #6a6862;  /* meta / caption / placeholder / timestamp */
+  --t4: #aea99e;  /* disabled / inactive */
+
+  /* Accent aliases for the product layer (track the core rust) */
+  --accent-tint: #f0e4df;
+
+  /* Semantic states — standard, lightly muted (eased one notch from the
+     first pass and approved). Each: solid (white text) + tint (alert bg)
+     + border (alert edge). Always paired with an icon, never hue alone.
+     Error is tuned brighter & cooler than rust so the two never read alike. */
+  --success: #2f7d51; --success-tint: #e7f0ea; --success-border: #c2dccd;
+  --warning: #a8740f; --warning-tint: #f5eedd; --warning-border: #e7d4a9;
+  --error:   #c8443a; --error-tint:   #f9e8e5; --error-border:   #eec6bf;
+  --info:    #3f6cc8; --info-tint:    #e9eef9; --info-border:    #c6d4ee;
+  --on-solid: #ffffff;  /* text/icon on a solid semantic or ink fill */
+
+  /* Core components (v0.4). Primary button = INK fill (LOCKED) — rust
+     stays a pure interaction signal, surfacing only on hover/focus as
+     the inset underline, never as a resting fill. */
+  --primary-bg:    var(--t1);
+  --primary-fg:    #f6f4ef;   /* paper on the ink primary */
+  --primary-hover: #2c2820;   /* ink lifted a touch on hover */
+
+  /* App patterns (v0.4 — Shell + Overlays rounds, signed off 2026-05-30).
+     Mostly compositions of the tokens above, not new values. Conventions:
+     · Sidebar active item = 2px rust LEFT-RULE + rust icon, no fill (option A).
+     · Data table = hairline rows, NO zebra; numbers right-aligned JetBrains
+       Mono tabular; status = pill (color + dot + word); hover=--s-hover,
+       selected row=--s-active; sticky header; current page=ink-filled.
+     · Global/connection status (connection-critical apps only): header metric
+       strip (cap 3–4 account-wide figures; hero numbers stay Hanken, mono =
+       dense/utility only) + pulsing connection dot + market-mode status pill
+       + per-gateway sidebar footer.
+     · Settings = label/description rows under mono group headers (no cards).
+     · FLOATING OVERLAYS = scrim + strong hairline + elevated tone, NO shadow
+       (option A, LOCKED). Scrim is a warm ink wash, never a blur. The
+       --overlay-shadow token below is intentionally PARKED & UNUSED. */
+  --scrim: rgba(21,20,14,0.46);   /* modal / palette / any blocking overlay */
+  /* --overlay-shadow: PARKED — option B was rejected; do not apply. */
+
+  /* Iconography (v0.4 — signed off 2026-05-30). One monochrome line set,
+     drawn to the type chassis. Conventions:
+     · 24px grid, 2px keyline (live area inset 2px all round).
+     · Stroke = TRUE 1.5px via vector-effect:non-scaling-stroke — stays
+       1.5px at every render size, matching the UI hairline.
+     · Terminals = stroke-linecap:square + stroke-linejoin:miter (option A,
+       LOCKED) — no roundness, consistent with radius-0. (Round was rejected.)
+     · Monochrome only; inherits currentColor (turns rust on interaction);
+       no fills except the rare solid dot (status / list bullet). No duotone.
+     · Sizes 16 (inline/table) / 20 (button/toolbar) / 24 (nav/empty) / 32. */
+  --icon-stroke: 1.5px;
+  --icon-grid:   24;
+
+  /* Charts (v1.1 — categorical series palette for product/data surfaces;
+     first needed by the AlphaDesk trading dashboard). The brand is
+     near-monochrome + rust and shipped no series palette. RESTRAINED
+     warm-leaning set: ink + rust lead (1 = primary series, 2 = benchmark /
+     accent), then four muted counterpoints. Dark mirror lifts each for
+     legibility on espresso. Semantic up/down (P&L, drawdown) use
+     --success / --error, NOT these — keep categorical and semantic separate. */
+  --chart-1: #15140e;  /* ink — primary series */
+  --chart-2: #9c4631;  /* rust — benchmark / accent series */
+  --chart-3: #486089;  /* dusty slate-blue */
+  --chart-4: #b08a3e;  /* warm ochre */
+  --chart-5: #3f7d63;  /* muted pine */
+  --chart-6: #8a5a4a;  /* clay */
+
+}
+
+
+/* ============================================================
+   DARK THEME — "Espresso" (LOCKED v0.3)
+   ============================================================
+   DERIVED from the light system, not inverted. Principles:
+   · No flat black / pure white — warm brown-black paper, warm
+     off-white ink, so the brand warmth survives in the dark.
+   · Accent LIFTED (#9c4631 → #cf7152) to clear contrast on dark;
+     hover goes LIGHTER (--accent-deep), inverting light-mode logic.
+   · Elevation still by tone — elevated surfaces sit a step LIGHTER
+     than --color-paper. No shadows.
+   Activates two ways: explicit [data-theme="dark"] opt-in, OR the
+   OS prefers-color-scheme when no explicit light theme is set. */
+
+[data-theme="dark"] {
+  --color-paper:           #211d17;  /* warm brown-black — base */
+  --color-paper-elevated:  #2a251e;  /* lifted a step lighter */
+  --color-code-bg:         #1a1611;  /* deeper than paper */
+  --color-ink:             #ece7dc;  /* warm off-white — primary text */
+  --color-ink-soft:        #9d9789;  /* utility text, metadata */
+  --color-ink-softer:      #6a655a;  /* hint, disabled, placeholder */
+  --color-rule:            #ece7dc;  /* strong rule — use sparingly */
+  --color-rule-soft:       #39332a;  /* hairline — default border */
+  --color-accent:          #cf7152;  /* RUST, lifted for dark legibility */
+  --color-accent-deep:     #e2906f;  /* hover — LIGHTER in dark */
+
+  /* PRODUCT-UI layer — Espresso mirror (v0.4) */
+  --s-window:      #16130e;
+  --s-sidebar:     #1c1813;
+  --s-surface:     #211d17;
+  --s-elevated:    #2a251e;
+  --s-input:       #322c24;
+  --s-hover:       rgba(236,231,220,0.055);
+  --s-active:      rgba(207,113,82,0.18);
+  --border:        #39332a;
+  --border-strong: #4a4337;
+  --t1: #ece7dc; --t2: #c2bcae; --t3: #9d9789; --t4: #6a655a;
+  --accent-tint: #3a261d;
+  --success: #57b083; --success-tint:#17271e; --success-border:#2b543b;
+  --warning: #d2a05c; --warning-tint:#2a2113; --warning-border:#56431f;
+  --error:   #e4796e; --error-tint:  #2d1a17; --error-border:  #5a2d27;
+  --info:    #6f93d6; --info-tint:   #182030; --info-border:   #2c4060;
+  --on-solid: #1a1610;
+  --primary-bg:    var(--t1);
+  --primary-fg:    #211d17;   /* base surface on the off-white ink primary */
+  --primary-hover: #fffefb;
+  --scrim: rgba(0,0,0,0.6);   /* deeper wash on the espresso base */
+
+  /* Charts (v1.1) — lifted for legibility on the espresso base */
+  --chart-1: #ece7dc; --chart-2: #cf7152; --chart-3: #7e9bca;
+  --chart-4: #d2a05c; --chart-5: #5fa37f; --chart-6: #c08977;
+}
+
+/* Auto dark on OS preference — unless an explicit light theme is set.
+   Mirror the same values so the cascade resolves identically. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-paper:           #211d17;
+    --color-paper-elevated:  #2a251e;
+    --color-code-bg:         #1a1611;
+    --color-ink:             #ece7dc;
+    --color-ink-soft:        #9d9789;
+    --color-ink-softer:      #6a655a;
+    --color-rule:            #ece7dc;
+    --color-rule-soft:       #39332a;
+    --color-accent:          #cf7152;
+    --color-accent-deep:     #e2906f;
+
+    /* PRODUCT-UI layer — Espresso mirror (v0.4) */
+    --s-window: #16130e; --s-sidebar: #1c1813; --s-surface: #211d17;
+    --s-elevated: #2a251e; --s-input: #322c24;
+    --s-hover: rgba(236,231,220,0.055); --s-active: rgba(207,113,82,0.18);
+    --border: #39332a; --border-strong: #4a4337;
+    --t1: #ece7dc; --t2: #c2bcae; --t3: #9d9789; --t4: #6a655a;
+    --accent-tint: #3a261d;
+    --success: #57b083; --success-tint:#17271e; --success-border:#2b543b;
+    --warning: #d2a05c; --warning-tint:#2a2113; --warning-border:#56431f;
+    --error:   #e4796e; --error-tint:  #2d1a17; --error-border:  #5a2d27;
+    --info:    #6f93d6; --info-tint:   #182030; --info-border:   #2c4060;
+    --on-solid: #1a1610;
+    --primary-bg: var(--t1); --primary-fg: #211d17; --primary-hover: #fffefb;
+    --scrim: rgba(0,0,0,0.6);
+    /* Charts (v1.1) — espresso mirror */
+    --chart-1: #ece7dc; --chart-2: #cf7152; --chart-3: #7e9bca;
+    --chart-4: #d2a05c; --chart-5: #5fa37f; --chart-6: #c08977;
+  }
+}
+
+
+/* ============================================================
+   Optional baseline — sensible defaults from the tokens.
+   ============================================================ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  font-weight: var(--weight-regular);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background var(--duration-base) var(--ease-out), color var(--duration-base) var(--ease-out);
+}
+
+::selection { background: var(--color-ink); color: var(--color-paper); }
+
+a { color: var(--color-ink); text-decoration: underline; text-decoration-color: var(--color-accent); text-underline-offset: 3px; transition: color var(--duration-fast) var(--ease-out); }
+a:hover { color: var(--color-accent); }
+
+/* CJK helpers — the --font-zh / --font-zh-serif tokens above are the
+   durable contract. GOTCHA: a bare `.zh` class (specificity 0,1,0) is
+   beaten by descendant rules such as `.body p` (0,1,1), silently
+   falling back to a system CJK font. For mixed-script body copy,
+   qualify the CJK selector so it wins, e.g. `.prose p.zh-serif`. */
+:lang(zh-Hant), .zh { font-family: var(--font-zh);       letter-spacing: var(--tracking-wide); line-height: var(--leading-loose); }
+.zh-serif           { font-family: var(--font-zh-serif); letter-spacing: var(--tracking-wide); line-height: var(--leading-loose); }

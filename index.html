@@ -4,153 +4,169 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title data-translate="page_title">Japan Travel Tracker</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="vendor/design-system/tokens.css" rel="stylesheet">
     <link href="style.css" rel="stylesheet">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="#">
-                <i class="fas fa-map-marked-alt me-2"></i>
-                <span data-translate="app_title">Japan Travel Tracker</span>
-            </a>
-            <div class="navbar-nav ms-auto">
-                <div class="dropdown me-2">
-                    <button class="btn btn-outline-light dropdown-toggle" type="button" id="languageDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-globe me-1"></i><span data-translate="language">Language</span>
-                    </button>
-                    <ul class="dropdown-menu" aria-labelledby="languageDropdown">
-                        <li><a class="dropdown-item" href="#" onclick="changeLanguage('en')">
-                            <i class="flag-icon flag-icon-us me-2"></i>English
-                        </a></li>
-                        <li><a class="dropdown-item" href="#" onclick="changeLanguage('zh-TW')">
-                            <i class="flag-icon flag-icon-tw me-2"></i>繁體中文
-                        </a></li>
-                    </ul>
-                </div>
-                <button class="btn btn-outline-light me-2" onclick="showTimeline()">
-                    <i class="fas fa-timeline me-1"></i><span data-translate="timeline">Timeline</span>
-                </button>
-                <button class="btn btn-outline-light me-2" onclick="showStatistics()">
-                    <i class="fas fa-chart-bar me-1"></i><span data-translate="stats">Stats</span>
-                </button>
-                <button class="btn btn-outline-light me-2" onclick="exportData()">
-                    <i class="fas fa-download me-1"></i><span data-translate="export">Export</span>
-                </button>
-                <button class="btn btn-outline-light" onclick="document.getElementById('import-file').click()">
-                    <i class="fas fa-upload me-1"></i><span data-translate="import">Import</span>
-                </button>
-                <input type="file" id="import-file" accept=".json" style="display: none;" onchange="importData(event)">
+    <!-- Icon sprite — design-system line set: 24px grid, 1.5px non-scaling stroke,
+         square caps + miter joins, monochrome currentColor. -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+        <defs>
+            <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s7-6.3 7-12a7 7 0 0 0-14 0c0 5.7 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></symbol>
+            <symbol id="i-timeline" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></symbol>
+            <symbol id="i-stats" viewBox="0 0 24 24"><path d="M4 4v16h16"/><path d="M8 16v-5M12 16v-9M16 16v-3"/></symbol>
+            <symbol id="i-export" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 20h14"/></symbol>
+            <symbol id="i-import" viewBox="0 0 24 24"><path d="M12 21V9M7 14l5-5 5 5M5 4h14"/></symbol>
+            <symbol id="i-delete" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7v13h12V7M10 11v6M14 11v6"/></symbol>
+            <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+            <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+            <symbol id="i-external" viewBox="0 0 24 24"><path d="M15 5h4v4M19 5l-7 7M18 12v7H5V6h7"/></symbol>
+            <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></symbol>
+            <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.8A8 8 0 1 1 11.2 3 6.3 6.3 0 0 0 21 12.8z"/></symbol>
+        </defs>
+    </svg>
+
+    <header class="topbar">
+        <a class="brand" href="#">
+            <svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg>
+            <span class="brand-name" data-translate="app_title">Japan Travel Tracker</span>
+        </a>
+
+        <div class="topbar-actions">
+            <button type="button" class="btn ghost" onclick="showTimeline()">
+                <svg class="ic" aria-hidden="true"><use href="#i-timeline"/></svg>
+                <span data-translate="timeline">Timeline</span>
+            </button>
+            <button type="button" class="btn ghost" onclick="showStatistics()">
+                <svg class="ic" aria-hidden="true"><use href="#i-stats"/></svg>
+                <span data-translate="stats">Stats</span>
+            </button>
+            <button type="button" class="btn ghost" onclick="exportData()">
+                <svg class="ic" aria-hidden="true"><use href="#i-export"/></svg>
+                <span data-translate="export">Export</span>
+            </button>
+            <button type="button" class="btn ghost" onclick="document.getElementById('import-file').click()">
+                <svg class="ic" aria-hidden="true"><use href="#i-import"/></svg>
+                <span data-translate="import">Import</span>
+            </button>
+            <input type="file" id="import-file" accept=".json" hidden onchange="importData(event)">
+
+            <div class="seg lang-toggle" role="group" aria-label="Language">
+                <button type="button" data-lang="en" aria-pressed="true">EN</button>
+                <button type="button" data-lang="zh-TW" aria-pressed="false">繁體中文</button>
             </div>
+
+            <button type="button" class="icon-btn theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+                <svg class="ic i-moon" aria-hidden="true"><use href="#i-moon"/></svg>
+                <svg class="ic i-sun" aria-hidden="true"><use href="#i-sun"/></svg>
+            </button>
         </div>
-    </nav>
+    </header>
 
-    <div class="container-fluid mt-4">
-        <div class="row">
-            <!-- Map Section -->
-            <div class="col-lg-8">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0" data-translate="map_title">Japan Prefecture Map</h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="japan-map-container">
-                            <!-- SVG Map will be inserted here -->
-                        </div>
-                    </div>
-                </div>
+    <main class="layout">
+        <!-- Map -->
+        <section class="panel map-panel">
+            <header class="panel-head">
+                <h2 class="panel-title" data-translate="map_title">Japan Prefecture Map</h2>
+            </header>
+            <div class="panel-body">
+                <div id="japan-map-container"><!-- SVG map injected here --></div>
             </div>
+        </section>
 
-            <!-- Control Panel -->
-            <div class="col-lg-4">
-                <div class="card mb-3">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0" data-translate="legend_title">Travel Status Legend</h5>
+        <!-- Side column -->
+        <div class="sidecol">
+            <section class="panel">
+                <header class="panel-head">
+                    <h2 class="panel-title" data-translate="legend_title">Travel Status Legend</h2>
+                </header>
+                <div class="panel-body">
+                    <div class="legend-item">
+                        <span class="legend-swatch never-been"></span>
+                        <span data-translate="never_been">Never Been (0)</span>
                     </div>
-                    <div class="card-body">
-                        <div class="legend-item mb-2">
-                            <span class="legend-color never-been"></span>
-                            <span data-translate="never_been">Never Been (0)</span>
-                        </div>
-                        <div class="legend-item mb-2">
-                            <span class="legend-color visited"></span>
-                            <span data-translate="visited">Visited (1)</span>
-                        </div>
-                        <div class="legend-item mb-2">
-                            <span class="legend-color stayed"></span>
-                            <span data-translate="stayed">Stayed (2)</span>
-                        </div>
-                        <div class="legend-item">
-                            <span class="legend-color road-trip"></span>
-                            <span data-translate="road_trip">Road Trip (dashed border)</span>
-                        </div>
+                    <div class="legend-item">
+                        <span class="legend-swatch visited"></span>
+                        <span data-translate="visited">Visited (1)</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-swatch stayed"></span>
+                        <span data-translate="stayed">Stayed (2)</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-swatch road-trip"></span>
+                        <span data-translate="road_trip">Road Trip (dashed border)</span>
                     </div>
                 </div>
+            </section>
 
-                <div class="card mb-3">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0" data-translate="quick_stats">Quick Statistics</h5>
+            <section class="panel">
+                <header class="panel-head">
+                    <h2 class="panel-title" data-translate="quick_stats">Quick Statistics</h2>
+                </header>
+                <div class="panel-body">
+                    <div class="stat-item">
+                        <span data-translate="prefectures_visited">Prefectures Visited:</span>
+                        <span class="stat-number"><span id="visited-count">0</span>/47</span>
                     </div>
-                    <div class="card-body">
-                        <div class="stat-item mb-2">
-                            <strong data-translate="prefectures_visited">Prefectures Visited:</strong> 
-                            <span class="stat-number"><span id="visited-count">0</span>/47</span>
-                        </div>
-                        <div class="stat-item mb-2">
-                            <strong data-translate="prefectures_stayed">Prefectures Stayed:</strong> 
-                            <span class="stat-number"><span id="stayed-count">0</span>/47</span>
-                        </div>
-                        <div class="stat-item mb-2">
-                            <strong data-translate="road_trips">Road Trips:</strong> 
-                            <span class="stat-number" id="roadtrip-count">0</span>
-                        </div>
-                        <div class="stat-item">
-                            <strong data-translate="total_visits">Total Visits:</strong> 
-                            <span class="stat-number" id="total-visits">0</span>
-                        </div>
+                    <div class="stat-item">
+                        <span data-translate="prefectures_stayed">Prefectures Stayed:</span>
+                        <span class="stat-number"><span id="stayed-count">0</span>/47</span>
+                    </div>
+                    <div class="stat-item">
+                        <span data-translate="road_trips">Road Trips:</span>
+                        <span class="stat-number" id="roadtrip-count">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span data-translate="total_visits">Total Visits:</span>
+                        <span class="stat-number" id="total-visits">0</span>
                     </div>
                 </div>
+            </section>
 
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0" data-translate="selected_prefecture">Selected Prefecture</h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="prefecture-info">
-                            <p class="text-muted" data-translate="click_prefecture">Click on a prefecture to view details</p>
-                        </div>
+            <section class="panel">
+                <header class="panel-head">
+                    <h2 class="panel-title" data-translate="selected_prefecture">Selected Prefecture</h2>
+                </header>
+                <div class="panel-body">
+                    <div id="prefecture-info">
+                        <p class="muted" data-translate="click_prefecture">Click on a prefecture to view details</p>
                     </div>
                 </div>
-            </div>
+            </section>
         </div>
-    </div>
+    </main>
 
     <!-- Visit Modal -->
-    <div class="modal fade" id="visitModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><span data-translate="add_visit_to">Add Visit to</span> <span id="modal-prefecture-name"></span></h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="visit-form">
-                        <div class="mb-3">
-                            <label for="visit-level" class="form-label" data-translate="visit_level">Visit Level</label>
-                            <select class="form-select" id="visit-level" required>
+    <dialog id="visitModal" class="modal" aria-labelledby="visitModalTitle">
+        <div class="modal-content">
+            <header class="modal-head">
+                <h2 class="modal-title" id="visitModalTitle"><span data-translate="add_visit_to">Add Visit to</span> <span id="modal-prefecture-name"></span></h2>
+                <button type="button" class="icon-btn" data-close aria-label="Close">
+                    <svg class="ic" aria-hidden="true"><use href="#i-close"/></svg>
+                </button>
+            </header>
+            <div class="modal-body">
+                <form id="visit-form">
+                    <div class="field">
+                        <label for="visit-level" data-translate="visit_level">Visit Level</label>
+                        <div class="selwrap">
+                            <select class="inp" id="visit-level" required>
                                 <option value="1" data-translate="visited_option">Visited (1)</option>
                                 <option value="2" data-translate="stayed_option">Stayed (2)</option>
                             </select>
+                            <svg class="ic chev" aria-hidden="true"><use href="#i-chevron"/></svg>
                         </div>
-                        <div class="row mb-3">
-                            <div class="col-6">
-                                <label for="visit-year" class="form-label" data-translate="year">Year</label>
-                                <input type="number" class="form-control" id="visit-year" min="1950" max="2030" required>
-                            </div>
-                            <div class="col-6">
-                                <label for="visit-month" class="form-label" data-translate="month">Month</label>
-                                <select class="form-select" id="visit-month" required>
+                    </div>
+                    <div class="field-row">
+                        <div class="field">
+                            <label for="visit-year" data-translate="year">Year</label>
+                            <input type="number" class="inp" id="visit-year" min="1950" max="2100" required>
+                        </div>
+                        <div class="field">
+                            <label for="visit-month" data-translate="month">Month</label>
+                            <div class="selwrap">
+                                <select class="inp" id="visit-month" required>
                                     <option value="1" data-translate="january">January</option>
                                     <option value="2" data-translate="february">February</option>
                                     <option value="3" data-translate="march">March</option>
@@ -164,100 +180,84 @@
                                     <option value="11" data-translate="november">November</option>
                                     <option value="12" data-translate="december">December</option>
                                 </select>
+                                <svg class="ic chev" aria-hidden="true"><use href="#i-chevron"/></svg>
                             </div>
                         </div>
-                        <div class="form-check mb-3">
-                            <input class="form-check-input" type="checkbox" id="road-trip-check">
-                            <label class="form-check-label" for="road-trip-check" data-translate="road_trip_checkbox">
-                                This was a road trip
-                            </label>
-                        </div>
-                        <div class="mb-3">
-                            <label for="visit-notes" class="form-label" data-translate="notes_optional">Notes (optional)</label>
-                            <textarea class="form-control" id="visit-notes" rows="3" data-translate-placeholder="notes_placeholder" placeholder="Add any notes about this visit..."></textarea>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-translate="cancel">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="addVisit()" data-translate="add_visit">Add Visit</button>
-                </div>
+                    </div>
+                    <label class="choice">
+                        <input type="checkbox" id="road-trip-check">
+                        <span class="switch"><span class="knob"></span></span>
+                        <span data-translate="road_trip_checkbox">This was a road trip</span>
+                    </label>
+                    <div class="field">
+                        <label for="visit-notes" data-translate="notes_optional">Notes (optional)</label>
+                        <textarea class="inp" id="visit-notes" rows="3" data-translate-placeholder="notes_placeholder" placeholder="Add any notes about this visit..."></textarea>
+                    </div>
+                </form>
             </div>
+            <footer class="modal-foot">
+                <button type="button" class="btn secondary" data-close data-translate="cancel">Cancel</button>
+                <button type="button" class="btn primary" onclick="addVisit()" data-translate="add_visit">Add Visit</button>
+            </footer>
         </div>
-    </div>
+    </dialog>
 
     <!-- Timeline Modal -->
-    <div class="modal fade" id="timelineModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" data-translate="visit_timeline">Visit Timeline</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div id="timeline-content">
-                        <!-- Timeline will be generated here -->
-                    </div>
-                </div>
+    <dialog id="timelineModal" class="modal modal-lg" aria-labelledby="timelineModalTitle">
+        <div class="modal-content">
+            <header class="modal-head">
+                <h2 class="modal-title" id="timelineModalTitle" data-translate="visit_timeline">Visit Timeline</h2>
+                <button type="button" class="icon-btn" data-close aria-label="Close">
+                    <svg class="ic" aria-hidden="true"><use href="#i-close"/></svg>
+                </button>
+            </header>
+            <div class="modal-body">
+                <div id="timeline-content"><!-- Timeline generated here --></div>
             </div>
         </div>
-    </div>
+    </dialog>
 
     <!-- Statistics Modal -->
-    <div class="modal fade" id="statisticsModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" data-translate="travel_statistics">Travel Statistics</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div id="statistics-content">
-                        <!-- Statistics will be generated here -->
-                    </div>
-                </div>
+    <dialog id="statisticsModal" class="modal modal-lg" aria-labelledby="statisticsModalTitle">
+        <div class="modal-content">
+            <header class="modal-head">
+                <h2 class="modal-title" id="statisticsModalTitle" data-translate="travel_statistics">Travel Statistics</h2>
+                <button type="button" class="icon-btn" data-close aria-label="Close">
+                    <svg class="ic" aria-hidden="true"><use href="#i-close"/></svg>
+                </button>
+            </header>
+            <div class="modal-body">
+                <div id="statistics-content"><!-- Statistics generated here --></div>
             </div>
         </div>
-    </div>
+    </dialog>
 
     <!-- Attribution Footer -->
-    <footer class="mt-5 py-4 bg-light border-top">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-8">
-                    <h6 data-translate="credits_attribution">Credits & Attribution</h6>
-                    <p class="text-muted small mb-2">
-                        <span data-translate="inspired_by">This project is inspired by the original</span> 
-                        <a href="https://zhung.com.tw/japanex/" target="_blank" rel="noopener">
-                            JapanEx (制縣等級)
-                        </a> 
-                        <span data-translate="created_by">created by Chih-Hung Cheng (@ukyouz). Thank you for the brilliant idea!</span>
-                    </p>
-                    <p class="text-muted small mb-2">
-                        <span data-translate="map_data_provided">Map coordinates based on</span> 
-                        <a href="https://github.com/ukyouz/JapanEx" target="_blank" rel="noopener">
-                            JapanEx prefecture boundaries
-                        </a>
-                        <span data-translate="map_license">with enhanced text positioning algorithm</span>
-                    </p>
-                </div>
-                <div class="col-md-4 text-md-end">
-                    <p class="text-muted small mb-1">
-                        <i class="fas fa-code me-1"></i>
-                        <span data-translate="made_with_love">Made with ❤️ for Japan travelers</span>
-                    </p>
-                    <p class="text-muted small">
-                        <i class="fas fa-github me-1"></i>
-                        <a href="#" class="text-decoration-none" target="_blank" data-translate="view_github">
-                            View on GitHub
-                        </a>
-                    </p>
-                </div>
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <div>
+                <h3 class="footer-h" data-translate="credits_attribution">Credits &amp; Attribution</h3>
+                <p class="muted small">
+                    <span data-translate="inspired_by">This project is inspired by the original</span>
+                    <a href="https://zhung.com.tw/japanex/" target="_blank" rel="noopener">JapanEx (制縣等級)</a>
+                    <span data-translate="created_by">created by Chih-Hung Cheng (@ukyouz). Thank you for the brilliant idea!</span>
+                </p>
+                <p class="muted small">
+                    <span data-translate="map_data_provided">Map coordinates based on</span>
+                    <a href="https://github.com/ukyouz/JapanEx" target="_blank" rel="noopener">JapanEx prefecture boundaries</a>
+                    <span data-translate="map_license">with enhanced text positioning algorithm</span>
+                </p>
+            </div>
+            <div class="footer-right">
+                <p class="muted small" data-translate="made_with_love">Made for Japan travelers</p>
+                <p class="small">
+                    <a href="https://github.com/xsf72006/japan-travel-tracker" target="_blank" rel="noopener" class="link-icon" data-translate="view_github">View on GitHub</a>
+                    <svg class="ic" aria-hidden="true"><use href="#i-external"/></svg>
+                </p>
             </div>
         </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

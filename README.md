@@ -11,8 +11,9 @@ An interactive web application to track your travel history across Japan's 47 pr
 - **Statistics**: View progress by regions and detailed travel analytics
 - **Timeline**: Chronological view of all your visits
 - **Data Management**: Export/import your travel data as JSON
-- **Bilingual Support**: English and Traditional Chinese interface
-- **Offline Ready**: Works completely offline using browser localStorage
+- **Bilingual Support**: English and Traditional Chinese (HK) interface
+- **Light & Dark**: Light and Espresso dark themes, following the OS by default
+- **Offline Ready**: Fully self-contained — design tokens and fonts are vendored, no CDNs, all data in browser localStorage
 
 ## Quick Start
 
@@ -40,9 +41,9 @@ An interactive web application to track your travel history across Japan's 47 pr
 
 ## Technology
 
-- **Frontend**: Vanilla HTML5, CSS3, JavaScript
-- **UI**: Bootstrap 5 + Font Awesome
-- **Map**: Custom SVG with embedded prefecture coordinates
+- **Frontend**: Vanilla HTML5, CSS3, JavaScript (no framework, no build step)
+- **UI**: Custom CSS on a personal design system — `vendor/design-system/tokens.css` + self-hosted Hanken Grotesk / JetBrains Mono. Square corners, hairlines, light + Espresso dark. Icons are an inline SVG sprite (no icon font)
+- **Map**: Custom SVG with embedded prefecture coordinates + an inscribed-rectangle algorithm for Kanji label placement
 - **Storage**: Browser localStorage (no backend needed)
 
 ## Development Approach

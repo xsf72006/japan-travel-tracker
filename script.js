@@ -64,7 +64,7 @@ const translations = {
         'created_by': 'created by Chih-Hung Cheng (@ukyouz). Thank you for the brilliant idea!',
         'map_data_provided': 'Map coordinates based on',
         'map_license': 'with enhanced text positioning algorithm',
-        'made_with_love': 'Made with ❤️ for Japan travelers',
+        'made_with_love': 'Made for Japan travelers',
         'view_github': 'View on GitHub',
         
         // Dynamic messages
@@ -161,7 +161,7 @@ const translations = {
         'created_by': '由 Chih-Hung Cheng (@ukyouz) 創作。感謝你的絕佳想法！',
         'map_data_provided': '地圖座標基於',
         'map_license': '並使用增強文字定位演算法',
-        'made_with_love': '以 ❤️ 為日本旅行者製作',
+        'made_with_love': '為日本旅行者製作',
         'view_github': '在 GitHub 上查看',
         
         // Dynamic messages
@@ -227,12 +227,16 @@ function updateLanguage() {
         }
     });
     
-    // Update document title
+    // Update document title + lang attribute (drives the CJK :lang() rules)
     document.title = t['page_title'];
-    
+    document.documentElement.lang = currentLanguage === 'zh-TW' ? 'zh-Hant-HK' : 'en';
+
     // Update months in dropdowns
     updateMonthOptions();
-    
+
+    // Reflect the active language on the segmented toggle
+    updateLanguageToggle();
+
     // Update dynamic content
     updateStatistics();
     if (currentPrefecture) {
@@ -348,27 +352,77 @@ let tooltip = null;
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
+    loadThemePreference();
     loadLanguagePreference();
     loadData();
     createJapanMap();
     updateLanguage(); // Apply language after everything is loaded
-    
-    // Set default year to current year
+
+    setupLanguageToggle();
+    setupThemeToggle();
+    setupModalDismiss();
+
+    // Set default year/month to the current date
     document.getElementById('visit-year').value = new Date().getFullYear();
     document.getElementById('visit-month').value = new Date().getMonth() + 1;
-    
-    // Additional timing fix - recalculate positions after a short delay
-    // This ensures SVG is fully rendered before algorithm runs
-    setTimeout(() => {
-        console.log('Running delayed recalculation to ensure SVG is ready...');
-        const labelsContainer = document.querySelector('#labels');
-        if (labelsContainer) {
-            // Clear current labels and regenerate
-            labelsContainer.innerHTML = getJapanExKanjiLabels();
-            console.log('Labels regenerated after delay.');
-        }
-    }, 500);
+
+    // Label positions are a pure function of the static SVG coordinates, so
+    // computing them once in createJapanMap() is sufficient — no re-run needed.
 });
+
+// HTML-escape untrusted strings (visit notes) before injecting into innerHTML.
+function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, function(ch) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+    });
+}
+
+// ── Theme (light / Espresso dark) ──────────────────────────────
+function loadThemePreference() {
+    const saved = localStorage.getItem('japanTravelTheme');
+    if (saved === 'light' || saved === 'dark') {
+        document.documentElement.setAttribute('data-theme', saved);
+    }
+    // When unset, tokens.css resolves the theme from the OS preference.
+}
+
+function setupThemeToggle() {
+    const btn = document.getElementById('theme-toggle');
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const current = document.documentElement.getAttribute('data-theme') || (prefersDark ? 'dark' : 'light');
+        const next = current === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('japanTravelTheme', next);
+    });
+}
+
+// ── Language toggle (design-system segmented control) ──────────
+function setupLanguageToggle() {
+    document.querySelectorAll('.lang-toggle [data-lang]').forEach(btn => {
+        btn.addEventListener('click', () => changeLanguage(btn.dataset.lang));
+    });
+    updateLanguageToggle();
+}
+
+function updateLanguageToggle() {
+    document.querySelectorAll('.lang-toggle [data-lang]').forEach(btn => {
+        btn.setAttribute('aria-pressed', String(btn.dataset.lang === currentLanguage));
+    });
+}
+
+// Close dialogs via [data-close] buttons and backdrop clicks.
+function setupModalDismiss() {
+    document.querySelectorAll('dialog.modal').forEach(dialog => {
+        dialog.querySelectorAll('[data-close]').forEach(btn => {
+            btn.addEventListener('click', () => dialog.close());
+        });
+        dialog.addEventListener('click', (e) => {
+            if (e.target === dialog) dialog.close(); // click on backdrop
+        });
+    });
+}
 
 // Data Management
 function loadData() {
@@ -386,30 +440,59 @@ function saveData() {
 function exportData() {
     const dataStr = JSON.stringify(visitData, null, 2);
     const dataBlob = new Blob([dataStr], {type: 'application/json'});
-    
+
+    const url = URL.createObjectURL(dataBlob);
     const link = document.createElement('a');
-    link.href = URL.createObjectURL(dataBlob);
+    link.href = url;
     link.download = 'japan-travel-data.json';
     link.click();
+    URL.revokeObjectURL(url); // release the blob; the download has been queued
+}
+
+// Validate + sanitize imported data. Treats the file as untrusted: only known
+// prefecture ids survive, and each visit is coerced to the expected shape.
+// Returns a clean object, or throws if the top-level structure is wrong.
+function sanitizeImportedData(raw) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+        throw new Error('Expected an object keyed by prefecture.');
+    }
+    const clean = {};
+    Object.keys(raw).forEach(prefId => {
+        if (!prefectures[prefId] || !Array.isArray(raw[prefId])) return;
+        const visits = raw[prefId]
+            .filter(v => v && typeof v === 'object')
+            .map(v => ({
+                level: (Number(v.level) === 2) ? 2 : 1,
+                year: parseInt(v.year, 10),
+                month: Math.min(12, Math.max(1, parseInt(v.month, 10))),
+                roadTrip: Boolean(v.roadTrip),
+                notes: typeof v.notes === 'string' ? v.notes : '',
+                timestamp: Number(v.timestamp) || Date.now()
+            }))
+            .filter(v => Number.isFinite(v.year) && Number.isFinite(v.month));
+        if (visits.length) clean[prefId] = visits;
+    });
+    return clean;
 }
 
 function importData(event) {
     const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                visitData = JSON.parse(e.target.result);
-                saveData();
-                updateMapColors();
-                updateStatistics();
-                alert(t('data_imported_successfully'));
-            } catch (error) {
-                alert(t('error_importing_data') + ' ' + error.message);
-            }
-        };
-        reader.readAsText(file);
-    }
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            visitData = sanitizeImportedData(JSON.parse(e.target.result));
+            saveData();
+            updateMapColors();
+            updateStatistics();
+            if (currentPrefecture) updatePrefectureInfo(currentPrefecture);
+            alert(t('data_imported_successfully'));
+        } catch (error) {
+            alert(t('error_importing_data') + ' ' + error.message);
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = ''; // allow re-importing the same file
 }
 
 // Map Creation - Based on original JapanEx implementation
@@ -417,7 +500,9 @@ function importData(event) {
 function createJapanMap() {
     const container = document.getElementById('japan-map-container');
     
-    // Use string concatenation for Safari compatibility (avoiding template literals)
+    // Use string concatenation for Safari compatibility (avoiding template literals).
+    // Labels are inserted AFTER the SVG is in the DOM — getJapanExKanjiLabels reads
+    // each prefecture via getElementById, so the shapes must exist first.
     const svgContent = '<svg version="1.1" id="japan-svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" ' +
         'viewBox="280 -350 1220 1220" style="enable-background:new 280 -350 1220 1220;" xml:space="preserve">' +
         '<g id="background">' +
@@ -426,12 +511,13 @@ function createJapanMap() {
         '<g id="area">' +
         getJapanExSVGPrefectures() +
         '</g>' +
-        '<g id="labels">' +
-        getJapanExKanjiLabels() +
-        '</g>' +
+        '<g id="labels"></g>' +
         '</svg>';
-    
+
     container.innerHTML = svgContent;
+
+    // Shapes now exist in the DOM → compute and insert the Kanji labels once.
+    document.getElementById('labels').innerHTML = getJapanExKanjiLabels();
     
     // Create tooltip
     if (!tooltip) {
@@ -704,37 +790,6 @@ function isPointInPolygon(point, polygon) {
     return inside;
 }
 
-// Check if a rectangle is completely inside a polygon
-function isRectangleInPolygon(rect, polygon) {
-    // Check all four corners of the rectangle
-    const corners = [
-        {x: rect.x, y: rect.y},
-        {x: rect.x + rect.width, y: rect.y},
-        {x: rect.x + rect.width, y: rect.y + rect.height},
-        {x: rect.x, y: rect.y + rect.height}
-    ];
-    
-    // All corners must be inside the polygon
-    const allInside = corners.every(corner => isPointInPolygon(corner, polygon));
-    
-    if (!allInside) {
-        return false;
-    }
-    
-    // Additional check: test center point and some edge points for more accuracy
-    const centerX = rect.x + rect.width / 2;
-    const centerY = rect.y + rect.height / 2;
-    const edgePoints = [
-        {x: centerX, y: rect.y}, // top center
-        {x: centerX, y: rect.y + rect.height}, // bottom center
-        {x: rect.x, y: centerY}, // left center
-        {x: rect.x + rect.width, y: centerY}, // right center
-        {x: centerX, y: centerY} // center
-    ];
-    
-    return edgePoints.every(point => isPointInPolygon(point, polygon));
-}
-
 // Fast inscribed rectangle algorithm optimized for performance
 function findLargestInscribedRectangle(polygon) {
     if (!polygon || polygon.length < 3) {
@@ -977,269 +1032,72 @@ function calculatePrefectureBounds(prefectureId) {
     }
 }
 
-// Enhanced debugging function to understand why algorithm fails
-function debugPrefectureDetails(prefectureId) {
-    console.log(`\n=== Debugging ${prefectureId} ===`);
-    
-    const element = document.getElementById(prefectureId);
-    if (!element) {
-        console.error(`Element not found: ${prefectureId}`);
-        return;
-    }
-    
-    console.log(`Element type: ${element.tagName}`);
-    console.log(`Element attributes:`, element.attributes);
-    
-    if (element.tagName === 'polygon') {
-        const points = element.getAttribute('points');
-        console.log(`Points attribute: "${points}"`);
-        const parsed = parseSVGPoints(points);
-        console.log(`Parsed points (${parsed ? parsed.length : 0}):`, parsed);
-    } else if (element.tagName === 'rect') {
-        const x = element.getAttribute('x');
-        const y = element.getAttribute('y');
-        const width = element.getAttribute('width');
-        const height = element.getAttribute('height');
-        console.log(`Rectangle: x=${x}, y=${y}, w=${width}, h=${height}`);
-    } else if (element.tagName === 'g') {
-        const children = element.querySelectorAll('polygon, rect');
-        console.log(`Group with ${children.length} children:`, children);
-    }
-    
-    const polygon = getPrefecturePolygon(prefectureId);
-    console.log(`Extracted polygon (${polygon ? polygon.length : 0} points):`, polygon);
-    
-    if (polygon) {
-        const rect = findLargestInscribedRectangle(polygon);
-        console.log(`Inscribed rectangle:`, rect);
-    }
-}
-
-// Generate Kanji labels using calculated bounding rectangles
+// Generate Kanji labels using calculated bounding rectangles. Each prefecture's
+// text is wrapped in a <g class="pref-label" data-pref="id"> so CSS can flip the
+// label colour by visit level (styling lives in style.css, not inline here).
 function getJapanExKanjiLabels() {
-    const startTime = performance.now();
-    
     const FONT_SIZE = '20';
     const VERTICAL_SPACING = 22;
-    
+
     let labelsSVG = '';
-    
-    // Add debugging rectangle visualization (set to false for production)
-    const DEBUG_RECTANGLES = false;
-    
-    let successCount = 0;
-    let failCount = 0;
-    
-    // Generate labels for all prefectures using intelligent positioning
-    Object.keys(prefectures).forEach(function(prefId) {
-        const labelData = calculatePrefectureBounds(prefId);
-        if (!labelData) {
-            console.warn(`No label data for ${prefId}`);
-            failCount++;
-            return;
-        }
-        
-        successCount++;
-        
-        // Add debugging rectangle visualization if enabled
-        if (DEBUG_RECTANGLES && labelData.rect) {
-            labelsSVG += '<rect x="' + labelData.rect.x + '" y="' + labelData.rect.y + '" ' +
-                        'width="' + labelData.rect.width + '" height="' + labelData.rect.height + '" ' +
-                        'fill="none" stroke="red" stroke-width="1" stroke-dasharray="2,2" opacity="0.7" ' +
-                        'pointer-events="none"/>';
-        }
-        
-        if (labelData.vertical) {
-            // Vertical text layout
-            const chars = labelData.kanji.split('');
-            chars.forEach(function(char, index) {
-                const yPos = labelData.y + (index * VERTICAL_SPACING) - ((chars.length - 1) * VERTICAL_SPACING / 2);
-                labelsSVG += '<text x="' + labelData.x + '" y="' + yPos + '" ' +
-                           'font-family="YuGothic, Meiryo, Hiragino Sans, sans-serif" font-size="' + FONT_SIZE + '" font-weight="600" ' +
-                           'fill="#222" text-anchor="middle" dominant-baseline="middle" ' +
-                           'pointer-events="none">' + char + '</text>';
-            });
-        } else {
-            // Horizontal text
-            labelsSVG += '<text x="' + labelData.x + '" y="' + labelData.y + '" ' +
-                        'font-family="YuGothic, Meiryo, Hiragino Sans, sans-serif" font-size="' + FONT_SIZE + '" font-weight="600" ' +
-                        'fill="#222" text-anchor="middle" dominant-baseline="middle" ' +
-                        'pointer-events="none">' + labelData.kanji + '</text>';
-        }
-    });
-    
-    const endTime = performance.now();
-    const duration = endTime - startTime;
-    
-    console.log(`Label generation complete: ${successCount} success, ${failCount} failed in ${duration.toFixed(1)}ms`);
-    if (failCount > 0) {
-        console.warn(`${failCount} prefectures failed to generate labels.`);
-    }
-    
-    return labelsSVG;
-}
 
-// Function to refresh map with algorithm after page is fully loaded
-function refreshMapWithAlgorithm() {
-    console.log('Refreshing map with inscribed rectangle algorithm...');
-    
-    // Wait a moment to ensure DOM is ready
-    setTimeout(() => {
-        createJapanMap();
-        console.log('Map refreshed. Check if Kanji names now appear correctly.');
-    }, 100);
-}
-
-// Function to force recalculation of all text positions
-function recalculateAllPositions() {
-    console.log('=== Recalculating All Text Positions ===');
-    
-    // Clear any cached results and recalculate
-    Object.keys(prefectures).forEach(prefId => {
-        console.log(`\n--- ${prefId} ---`);
-        const result = calculatePrefectureBounds(prefId);
-        if (result) {
-            console.log(`✓ Success: ${result.kanji} at (${result.x.toFixed(1)}, ${result.y.toFixed(1)}) - ${result.vertical ? 'vertical' : 'horizontal'}`);
-        } else {
-            console.log(`✗ Failed to calculate position`);
-            debugPrefectureDetails(prefId);
-        }
-    });
-    
-    // Regenerate the map
-    createJapanMap();
-}
-
-// Debugging function to enable rectangle visualization
-function enableRectangleDebugging() {
-    // Temporarily replace the function to show rectangles
-    const originalFunction = getJapanExKanjiLabels;
-    
-    window.getJapanExKanjiLabels = function() {
-        const FONT_SIZE = '20';
-        const VERTICAL_SPACING = 22;
-        
-        let labelsSVG = '';
-        
-        // Generate labels for all prefectures with rectangle debugging enabled
     Object.keys(prefectures).forEach(function(prefId) {
         const labelData = calculatePrefectureBounds(prefId);
         if (!labelData) return;
-            
-            // Add debugging rectangle visualization
-            if (labelData.rect) {
-                labelsSVG += '<rect x="' + labelData.rect.x + '" y="' + labelData.rect.y + '" ' +
-                            'width="' + labelData.rect.width + '" height="' + labelData.rect.height + '" ' +
-                            'fill="rgba(255,0,0,0.1)" stroke="red" stroke-width="1" stroke-dasharray="3,3" ' +
-                            'pointer-events="none"/>';
-            }
-        
+
+        let inner = '';
         if (labelData.vertical) {
-            // Vertical text layout
             const chars = labelData.kanji.split('');
             chars.forEach(function(char, index) {
                 const yPos = labelData.y + (index * VERTICAL_SPACING) - ((chars.length - 1) * VERTICAL_SPACING / 2);
-                labelsSVG += '<text x="' + labelData.x + '" y="' + yPos + '" ' +
-                           'font-family="YuGothic, Meiryo, Hiragino Sans, sans-serif" font-size="' + FONT_SIZE + '" font-weight="600" ' +
-                           'fill="#222" text-anchor="middle" dominant-baseline="middle" ' +
-                           'pointer-events="none">' + char + '</text>';
+                inner += '<text x="' + labelData.x + '" y="' + yPos + '" font-size="' + FONT_SIZE + '" ' +
+                         'text-anchor="middle" dominant-baseline="middle" pointer-events="none">' + char + '</text>';
             });
         } else {
-            // Horizontal text
-            labelsSVG += '<text x="' + labelData.x + '" y="' + labelData.y + '" ' +
-                        'font-family="YuGothic, Meiryo, Hiragino Sans, sans-serif" font-size="' + FONT_SIZE + '" font-weight="600" ' +
-                        'fill="#222" text-anchor="middle" dominant-baseline="middle" ' +
-                        'pointer-events="none">' + labelData.kanji + '</text>';
+            inner += '<text x="' + labelData.x + '" y="' + labelData.y + '" font-size="' + FONT_SIZE + '" ' +
+                     'text-anchor="middle" dominant-baseline="middle" pointer-events="none">' + labelData.kanji + '</text>';
         }
+
+        labelsSVG += '<g class="pref-label" data-pref="' + prefId + '">' + inner + '</g>';
     });
-    
+
     return labelsSVG;
-    };
-    
-    // Recreate the map to show rectangles
-    createJapanMap();
-    console.log('Rectangle debugging enabled. Call disableRectangleDebugging() to turn off.');
 }
 
-// Function to disable rectangle debugging
-function disableRectangleDebugging() {
-    // Restore original function
-    delete window.getJapanExKanjiLabels;
-    createJapanMap();
-    console.log('Rectangle debugging disabled.');
-}
+// Setup prefecture interactions. The document-level click delegation is
+// registered once (guarded) so rebuilding the map never stacks duplicate
+// handlers; per-element hover/keyboard listeners are (re)bound to the shapes.
+let prefectureClickBound = false;
 
-// Console testing function for individual prefectures
-function testPrefecture(prefectureId) {
-    const result = calculatePrefectureBounds(prefectureId);
-    if (result) {
-        console.log(`Prefecture: ${prefectureId}`);
-        console.log(`Kanji: ${result.kanji}`);
-        console.log(`Orientation: ${result.vertical ? 'Vertical' : 'Horizontal'}`);
-        console.log(`Center: (${result.x.toFixed(1)}, ${result.y.toFixed(1)})`);
-        console.log(`Rectangle: x=${result.rect.x.toFixed(1)}, y=${result.rect.y.toFixed(1)}, w=${result.rect.width.toFixed(1)}, h=${result.rect.height.toFixed(1)}`);
-        console.log(`Area: ${(result.rect.width * result.rect.height).toFixed(1)}`);
-        if (result.fallback) {
-            console.log('Note: Using fallback calculation');
-        }
-        return result;
-    } else {
-        console.log(`Failed to calculate bounds for ${prefectureId}`);
-        return null;
-    }
-}
-
-// Debug function to test all prefectures
-function debugAllPrefectures() {
-    console.log('=== Testing all prefectures ===');
-    let successCount = 0;
-    let failCount = 0;
-    
-    Object.keys(prefectures).forEach(prefId => {
-        const result = calculatePrefectureBounds(prefId);
-        if (result) {
-            successCount++;
-            console.log(`✓ ${prefId}: Success - area ${(result.rect.width * result.rect.height).toFixed(1)}`);
-        } else {
-            failCount++;
-            console.log(`✗ ${prefId}: FAILED`);
-            // Auto-debug failed prefectures
-            debugPrefectureDetails(prefId);
-        }
-    });
-    
-    console.log(`\n=== Summary ===`);
-    console.log(`Algorithm success: ${successCount}`);
-    console.log(`Failed: ${failCount}`);
-    console.log(`Total: ${successCount + failCount}`);
-    
-    // If we have failures, suggest debugging
-    if (failCount > 0) {
-        console.log(`\nTo debug individual failures, use: debugPrefectureDetails('prefecture_id')`);
-    }
-}
-
-// Setup prefecture interactions using JapanEx approach
 function setupPrefectureInteractions() {
-    // Use event delegation like the original JapanEx
-    document.addEventListener('click', (e) => {
-        let target = e.target;
-        
-        // Handle prefecture clicks (area group)
-        if (target.closest('#area')) {
-            // Get the prefecture element
-            if (target.id === '') target = target.parentNode;
-            if (target.classList && target.classList.contains('prefecture')) {
-                selectPrefecture(target.id);
+    if (!prefectureClickBound) {
+        document.addEventListener('click', (e) => {
+            let target = e.target;
+            if (target.closest('#area')) {
+                if (target.id === '') target = target.parentNode;
+                if (target.classList && target.classList.contains('prefecture')) {
+                    selectPrefecture(target.id);
+                }
             }
-        }
-    });
-    
-    // Add hover effects
+        });
+        prefectureClickBound = true;
+    }
+
+    // Hover tooltips + keyboard accessibility (focusable, Enter/Space to open)
     document.querySelectorAll('.prefecture').forEach(prefecture => {
         prefecture.addEventListener('mouseenter', showTooltip);
         prefecture.addEventListener('mouseleave', hideTooltip);
         prefecture.addEventListener('mousemove', moveTooltip);
+
+        prefecture.setAttribute('tabindex', '0');
+        prefecture.setAttribute('role', 'button');
+        prefecture.setAttribute('aria-label', getLocalizedPrefectureName(prefecture.id));
+        prefecture.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                selectPrefecture(prefecture.id);
+            }
+        });
     });
 }
 
@@ -1272,12 +1130,17 @@ function selectPrefecture(prefectureId) {
     currentPrefecture = prefectureId;
     const prefectureName = getLocalizedPrefectureName(prefectureId);
     
+    // Mark the selected prefecture (rust outline via CSS)
+    document.querySelectorAll('.prefecture[data-selected]').forEach(el => el.removeAttribute('data-selected'));
+    const selectedEl = document.getElementById(prefectureId);
+    if (selectedEl) selectedEl.setAttribute('data-selected', 'true');
+
     // Update prefecture info panel
     updatePrefectureInfo(prefectureId);
-    
+
     // Show modal for adding new visit
     document.getElementById('modal-prefecture-name').textContent = prefectureName;
-    new bootstrap.Modal(document.getElementById('visitModal')).show();
+    document.getElementById('visitModal').showModal();
 }
 
 function updatePrefectureInfo(prefectureId) {
@@ -1285,38 +1148,38 @@ function updatePrefectureInfo(prefectureId) {
     const prefectureName = getLocalizedPrefectureName(prefectureId);
     const visits = visitData[prefectureId] || [];
     
-    let html = '<h6>' + prefectureName + '</h6>';
-    
+    let html = '<h3>' + escapeHtml(prefectureName) + '</h3>';
+
     if (visits.length === 0) {
-        html += '<p class="text-muted">' + t('no_visits_recorded') + '</p>';
+        html += '<p class="muted">' + t('no_visits_recorded') + '</p>';
     } else {
         html += '<div class="prefecture-visits">';
         visits.sort((a, b) => new Date(a.year, a.month) - new Date(b.year, b.month));
-        
+
         visits.forEach((visit, index) => {
             const levelText = visit.level === 1 ? t('visited_option') : t('stayed_option');
             const levelClass = visit.level === 1 ? 'visited' : 'stayed';
             const monthName = getLocalizedMonth(visit.month);
-            
+
             html += '<div class="visit-item">' +
                     '<div class="visit-info">' +
-                    '<span class="visit-level ' + levelClass + '">' + levelText + '</span>' +
-                    (visit.roadTrip ? '<span class="road-trip-badge">' + t('road_trip_text') + '</span>' : '') +
+                    '<span class="pill ' + levelClass + '"><span class="dot"></span>' + levelText + '</span>' +
+                    (visit.roadTrip ? '<span class="pill road-trip">' + t('road_trip_text') + '</span>' : '') +
+                    '<span class="visit-date">' + monthName + ' ' + visit.year + '</span>' +
                     '</div>' +
-                    '<div class="visit-date">' + monthName + ' ' + visit.year + '</div>' +
-                    '<button class="btn btn-sm btn-outline-danger" onclick="removeVisit(\'' + prefectureId + '\', ' + index + ')">' +
-                    '<i class="fas fa-trash"></i>' +
+                    '<button class="icon-btn" aria-label="Remove" onclick="removeVisit(\'' + prefectureId + '\', ' + index + ')">' +
+                    '<svg class="ic" aria-hidden="true"><use href="#i-delete"/></svg>' +
                     '</button>' +
                     '</div>';
-            
+
             if (visit.notes) {
-                html += '<div class="visit-notes text-small text-muted">' + visit.notes + '</div>';
+                html += '<div class="visit-notes">' + escapeHtml(visit.notes) + '</div>';
             }
         });
-        
+
         html += '</div>';
     }
-    
+
     infoPanel.innerHTML = html;
 }
 
@@ -1357,7 +1220,7 @@ function addVisit() {
     updatePrefectureInfo(currentPrefecture);
     
     // Close modal and reset form
-    bootstrap.Modal.getInstance(document.getElementById('visitModal')).hide();
+    document.getElementById('visitModal').close();
     document.getElementById('visit-form').reset();
     document.getElementById('visit-year').value = new Date().getFullYear();
     document.getElementById('visit-month').value = new Date().getMonth() + 1;
@@ -1378,59 +1241,32 @@ function removeVisit(prefectureId, index) {
     }
 }
 
-// Map Color Updates - Using JapanEx approach with SVG fill attributes
+// Map Color Updates — set data-* attributes; all colour comes from style.css
+// tokens (chart palette), so the map is theme-aware with no hardcoded hex here.
 function updateMapColors() {
-    const colorMap = {
-        0: '#ffffff', // Never been - white
-        1: '#3498db', // Visited - blue  
-        2: '#e74c3c'  // Stayed - red
-    };
-    
     Object.keys(prefectures).forEach(prefectureId => {
         const element = document.getElementById(prefectureId);
-        if (!element) return; // Skip if element not found
-        
+        if (!element) return;
+
         const visits = visitData[prefectureId] || [];
         let level = 0;
         let hasRoadTrip = false;
-        
         if (visits.length > 0) {
-            // Get highest level
             level = Math.max(...visits.map(visit => visit.level));
-            // Check if any visit was a road trip
             hasRoadTrip = visits.some(visit => visit.roadTrip);
         }
-        
-        // Set fill color based on level (JapanEx approach)
-        const color = colorMap[level];
-        element.setAttribute('fill', color);
-        
-        // Apply to child elements for complex prefecture shapes
-        const childElements = element.querySelectorAll('polygon, rect, path');
-        childElements.forEach(child => {
-            child.setAttribute('fill', color);
-        });
-        
-        // Set stroke styling for road trips (dashed border)
+
+        element.setAttribute('data-level', level);
         if (hasRoadTrip) {
-            element.setAttribute('stroke-dasharray', '4,4');
-            element.setAttribute('stroke-width', '3');
-            element.style.animation = 'dash-animation 1s linear infinite';
-            childElements.forEach(child => {
-                child.setAttribute('stroke-dasharray', '4,4');
-                child.setAttribute('stroke-width', '3');
-                child.style.animation = 'dash-animation 1s linear infinite';
-            });
+            element.setAttribute('data-roadtrip', 'true');
         } else {
-            element.removeAttribute('stroke-dasharray');
-            element.setAttribute('stroke-width', '2');
-            element.style.animation = '';
-            childElements.forEach(child => {
-                child.removeAttribute('stroke-dasharray');
-                child.setAttribute('stroke-width', '2');
-                child.style.animation = '';
-            });
+            element.removeAttribute('data-roadtrip');
         }
+
+        // Mirror the level onto the matching label group so the kanji colour
+        // flips for contrast against the fill (see .pref-label rules in CSS).
+        const label = document.querySelector('.pref-label[data-pref="' + prefectureId + '"]');
+        if (label) label.setAttribute('data-level', level);
     });
 }
 
@@ -1459,7 +1295,7 @@ function updateStatistics() {
 
 // Timeline View
 function showTimeline() {
-    const modal = new bootstrap.Modal(document.getElementById('timelineModal'));
+    const modal = document.getElementById('timelineModal');
     const content = document.getElementById('timeline-content');
     
     // Collect all visits
@@ -1478,7 +1314,7 @@ function showTimeline() {
     allVisits.sort((a, b) => new Date(a.year, a.month - 1) - new Date(b.year, b.month - 1));
     
     if (allVisits.length === 0) {
-        content.innerHTML = '<p class="text-muted">' + t('no_visits_yet') + '</p>';
+        content.innerHTML = '<p class="muted">' + t('no_visits_yet') + '</p>';
     } else {
         let html = '<div class="timeline">';
         
@@ -1491,24 +1327,24 @@ function showTimeline() {
             
             html += '<div class="timeline-item ' + levelClass + roadTripClass + '">' +
                     '<div class="timeline-date">' + monthName + ' ' + visit.year + '</div>' +
-                    '<div class="timeline-prefecture">' + prefectureName + '</div>' +
+                    '<div class="timeline-prefecture">' + escapeHtml(prefectureName) + '</div>' +
                     '<div class="timeline-details">' +
-                    levelText + (visit.roadTrip ? ' • ' + t('road_trip_text') : '') +
-                    (visit.notes ? '<br><em>' + visit.notes + '</em>' : '') +
+                    levelText + (visit.roadTrip ? ' · ' + t('road_trip_text') : '') +
+                    (visit.notes ? '<br><em>' + escapeHtml(visit.notes) + '</em>' : '') +
                     '</div>' +
                     '</div>';
         });
-        
+
         html += '</div>';
         content.innerHTML = html;
     }
-    
-    modal.show();
+
+    modal.showModal();
 }
 
 // Statistics View
 function showStatistics() {
-    const modal = new bootstrap.Modal(document.getElementById('statisticsModal'));
+    const modal = document.getElementById('statisticsModal');
     const content = document.getElementById('statistics-content');
     
     // Calculate detailed statistics
@@ -1523,10 +1359,10 @@ function showStatistics() {
                           '</div>';
     });
     
-    const html = '<div class="row">' +
-        '<div class="col-md-6">' +
-        '<h6>' + t('prefecture_coverage') + '</h6>' +
-        '<div class="mb-3">' +
+    const html = '<div class="stats-grid">' +
+        '<div>' +
+        '<h3>' + t('prefecture_coverage') + '</h3>' +
+        '<div class="stats-block">' +
         '<div class="stat-item">' +
         '<span>' + t('total_prefectures') + '</span>' +
         '<strong>47</strong>' +
@@ -1544,8 +1380,8 @@ function showStatistics() {
         '<strong>' + (47 - stats.visitedCount) + '</strong>' +
         '</div>' +
         '</div>' +
-        '<h6>' + t('travel_patterns') + '</h6>' +
-        '<div class="mb-3">' +
+        '<h3>' + t('travel_patterns') + '</h3>' +
+        '<div class="stats-block">' +
         '<div class="stat-item">' +
         '<span>' + t('total_visits') + '</span>' +
         '<strong>' + stats.totalVisits + '</strong>' +
@@ -1560,13 +1396,13 @@ function showStatistics() {
         '</div>' +
         '</div>' +
         '</div>' +
-        '<div class="col-md-6">' +
-        '<h6>' + t('regional_coverage') + '</h6>' +
-        '<div class="mb-3">' +
+        '<div>' +
+        '<h3>' + t('regional_coverage') + '</h3>' +
+        '<div class="stats-block">' +
         regionStatsHTML +
         '</div>' +
-        '<h6>' + t('timeline_header') + '</h6>' +
-        '<div class="mb-3">' +
+        '<h3>' + t('timeline_header') + '</h3>' +
+        '<div class="stats-block">' +
         '<div class="stat-item">' +
         '<span>' + t('first_visit') + '</span>' +
         '<strong>' + stats.firstVisit + '</strong>' +
@@ -1582,9 +1418,9 @@ function showStatistics() {
         '</div>' +
         '</div>' +
         '</div>';
-    
+
     content.innerHTML = html;
-    modal.show();
+    modal.showModal();
 }
 
 function calculateDetailedStatistics() {
