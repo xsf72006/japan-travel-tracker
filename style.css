@@ -383,8 +383,14 @@ select.inp { appearance: none; -webkit-appearance: none; padding-right: var(--sp
   #japan-map-container { min-height: 380px; }
 }
 @media (max-width: 600px) {
-  .topbar { padding: var(--space-3) var(--space-4); }
-  .topbar-actions .btn span:not(.ic) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  /* Stack the bar: brand on its own row, then a 2-col control grid.
+     Labels stay visible (icon-only was unclear); the grid keeps the
+     language + theme controls together on the last row, never orphaned. */
+  .topbar { flex-direction: column; align-items: stretch; gap: var(--space-3); padding: var(--space-3) var(--space-4); }
+  .topbar-actions { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
+  .topbar-actions .btn { width: 100%; justify-content: flex-start; height: 40px; }
+  .lang-toggle { justify-self: start; }
+  .theme-toggle { justify-self: end; }
   .layout { padding: var(--space-4); gap: var(--space-4); }
   .field-row { grid-template-columns: 1fr; }
   .stats-grid { grid-template-columns: 1fr; }
