@@ -64,7 +64,10 @@
         </div>
     </header>
 
-    <main class="layout">
+    <!-- The map workspace opts into the v1.2 VIVID data tier: prefecture
+         categories render as distinct data ink. Chrome (topbar, modal shells,
+         footer) sits outside this scope and stays on the muted brand ramp. -->
+    <main class="layout" data-viz="vivid">
         <!-- Map -->
         <section class="panel map-panel">
             <header class="panel-head">
@@ -213,7 +216,8 @@
                 </button>
             </header>
             <div class="modal-body">
-                <div id="timeline-content"><!-- Timeline generated here --></div>
+                <!-- vivid tier: timeline status dots must match the map's data ink -->
+                <div id="timeline-content" data-viz="vivid"><!-- Timeline generated here --></div>
             </div>
         </div>
     </dialog>

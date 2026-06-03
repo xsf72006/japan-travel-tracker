@@ -1,17 +1,23 @@
 /* ============================================================
-   Japan Travel Tracker — restyled to the personal Design System (v1.1)
+   Japan Travel Tracker — restyled to the personal Design System (v1.2)
    Tokens come from vendor/design-system/tokens.css. This file maps
    those tokens to the app's surfaces and components. No raw hex except
    the two fixed map-label contrast values (flagged below).
    Swiss bones: radius 0, 1px hairlines, no shadows. Rust = interaction
    signal only (hover / focus / selected). Light + Espresso dark.
+   The map workspace opts into the v1.2 VIVID data tier (data-viz="vivid"
+   in index.html) so prefecture categories read as distinct data ink;
+   chrome stays on the muted brand tokens.
    ============================================================ */
 
 /* ── App-level semantic variables (compose tokens; never sprinkle hex) ── */
 :root {
   --map-empty:   var(--s-input);     /* never been — empty paper */
-  --map-visited: var(--chart-3);     /* slate-blue */
-  --map-stayed:  var(--chart-4);     /* warm ochre */
+  /* Category data ink. These are the MUTED (fallback) values; they are
+     re-declared under [data-viz="vivid"] below so the map workspace resolves
+     them to the v1.2 vivid ramp (chart-3 = green, chart-4 = gold). */
+  --map-visited: var(--chart-3);     /* slate-blue (muted) → green (vivid) */
+  --map-stayed:  var(--chart-4);     /* ochre      (muted) → gold  (vivid) */
   --map-stroke:  var(--border-strong);
 
   /* Fixed (non-theming) ink/paper for kanji contrast against the chart fills,
@@ -37,6 +43,21 @@
     --map-label-visited: var(--map-fixed-ink);
     --map-label-stayed:  var(--map-fixed-ink);
   }
+}
+/* Vivid tier (v1.2). NOTE on CSS custom-property resolution: a property
+   substitutes its var() at its DECLARATION site, then inherits the resolved
+   value. So --map-visited: var(--chart-3) declared on :root resolves against
+   :root's MUTED --chart-3 and inherits muted — even though --chart-3 is vivid
+   on this element. We must therefore RE-DECLARE the category vars here so their
+   var(--chart-*) re-resolves against the vivid ramp in this scope. */
+[data-viz="vivid"] {
+  --map-visited: var(--chart-3);              /* re-resolved → vivid green */
+  --map-stayed:  var(--chart-4);              /* re-resolved → vivid gold  */
+  /* The bright green fill needs an INK kanji label, not paper — ink ~5.9:1 vs
+     paper ~3.0:1 on chart-3 green (WCAG AA). Coupled to the tier here, so paper
+     returns automatically if the map ever reverts to muted slate-blue. "Stayed"
+     is already ink in every theme, so only "visited" flips. */
+  --map-label-visited: var(--map-fixed-ink);
 }
 
 /* ── Base ── */

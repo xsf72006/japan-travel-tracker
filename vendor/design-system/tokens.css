@@ -1,5 +1,5 @@
 /* ============================================================
-   Personal Design System — v1.1
+   Personal Design System — v1.2
    ============================================================
    Maintainer: Sefer · Hong Kong · 2026
    Companion: brand-guidelines.md (intent) + decisions-v0.2.md,
@@ -16,6 +16,11 @@
    v1.1 — self-hosted Latin fonts; + categorical chart palette
         (--chart-1..6, light + Espresso) for product/data surfaces.
         Chart palette also mirrored in swift/ (DSPalette) for cross-platform parity.
+   v1.2 — VIVID data tier: an opt-in high-separation categorical
+        ramp (data-viz="vivid", Option A — OKLCH ~60° hue spacing,
+        rust-anchored), light + Espresso, mirrored in swift/. Default
+        --chart-1..6 stay muted. + the 6-colour overflow rule. See
+        decisions-v1.2-vivid-data-tier.md.
    v0.3 added the Espresso dark theme (derived, not inverted).
    v0.2 superseded v0.1. Every value below was selected through
    like-for-like exploration and is now LOCKED unless noted.
@@ -256,6 +261,41 @@
 }
 
 
+/* ────────────────────────────────────────────────────────────
+   VIVID DATA TIER (v1.2) — opt-in categorical ramp
+   ────────────────────────────────────────────────────────────
+   The default --chart-1..6 above stay MUTED (editorial / brand
+   surfaces). For data-dense product surfaces (dashboards, many
+   series), scope the container with data-viz="vivid" to swap in a
+   high-separation ramp: OKLCH, ~constant lightness, ~60° hue
+   spacing, series 1 rust-anchored for brand continuity (Option A,
+   LOCKED v1.2 via like-for-like review — see decisions-v1.2).
+
+   CHROME vs DATA INK: brand restraint governs chrome (paper, ink,
+   the rust interaction signal). This ramp colours DATA ONLY; it
+   never bleeds into the shell. When reskinning a vivid project,
+   map chrome → brand tokens but route data-encoding colours here
+   rather than flattening them to neutrals.
+
+   OVERFLOW — 6 is the categorical CEILING. Beyond 6 series, do NOT
+   repeat the ramp (false identity). Prefer: Top-5 + a neutral
+   "Other" (grey, not a 7th hue) · small multiples · direct
+   labelling + de-emphasis · or a sequential ramp if the data is
+   actually ordinal. If 7–12 is truly unavoidable, the extended set
+   = these 6 anchors + a second lightness-shifted tier (a base and
+   its tint never adjacent), shipped with a discrimination caveat
+   and a colour-blind check. Semantic up/down stays --success /
+   --error — never these. */
+[data-viz="vivid"] {
+  --chart-1: oklch(0.55 0.17 35);   /* rust anchor */
+  --chart-2: oklch(0.60 0.15 250);  /* blue   */
+  --chart-3: oklch(0.64 0.15 150);  /* green  */
+  --chart-4: oklch(0.74 0.14 85);   /* gold   */
+  --chart-5: oklch(0.56 0.18 320);  /* violet */
+  --chart-6: oklch(0.66 0.15 195);  /* teal   */
+}
+
+
 /* ============================================================
    DARK THEME — "Espresso" (LOCKED v0.3)
    ============================================================
@@ -308,6 +348,12 @@
   --chart-4: #d2a05c; --chart-5: #5fa37f; --chart-6: #c08977;
 }
 
+/* Vivid data tier — Espresso mirror (v1.2): same hues, lightness lifted. */
+[data-theme="dark"] [data-viz="vivid"] {
+  --chart-1: oklch(0.66 0.16 35);  --chart-2: oklch(0.70 0.14 250); --chart-3: oklch(0.74 0.14 150);
+  --chart-4: oklch(0.82 0.13 85);  --chart-5: oklch(0.68 0.16 320); --chart-6: oklch(0.76 0.14 195);
+}
+
 /* Auto dark on OS preference — unless an explicit light theme is set.
    Mirror the same values so the cascade resolves identically. */
 @media (prefers-color-scheme: dark) {
@@ -340,6 +386,11 @@
     /* Charts (v1.1) — espresso mirror */
     --chart-1: #ece7dc; --chart-2: #cf7152; --chart-3: #7e9bca;
     --chart-4: #d2a05c; --chart-5: #5fa37f; --chart-6: #c08977;
+  }
+  /* Vivid data tier — auto-dark mirror (v1.2) */
+  :root:not([data-theme="light"]) [data-viz="vivid"] {
+    --chart-1: oklch(0.66 0.16 35);  --chart-2: oklch(0.70 0.14 250); --chart-3: oklch(0.74 0.14 150);
+    --chart-4: oklch(0.82 0.13 85);  --chart-5: oklch(0.68 0.16 320); --chart-6: oklch(0.76 0.14 195);
   }
 }
 
