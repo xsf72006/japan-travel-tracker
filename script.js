@@ -487,7 +487,9 @@ function sanitizeImportedData(raw) {
     }
     const clean = {};
     Object.keys(raw).forEach(prefId => {
-        if (!prefectures[prefId] || !Array.isArray(raw[prefId])) return;
+        // hasOwnProperty: inherited names like "constructor" must not pass as
+        // prefecture ids (a truthy prefectures[prefId] lookup would let them).
+        if (!Object.prototype.hasOwnProperty.call(prefectures, prefId) || !Array.isArray(raw[prefId])) return;
         const visits = raw[prefId]
             .filter(v => v && typeof v === 'object')
             .map(v => ({
