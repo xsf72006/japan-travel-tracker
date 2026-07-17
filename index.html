@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Defense-in-depth: same-origin only. style-src keeps 'unsafe-inline'
-         for the style="" attributes on the SVG sprite/map markup;
+    <!-- Defense-in-depth: same-origin only, no inline script or style;
          data: covers the inline SVG favicon. -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'self'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'self'">
     <title data-translate="page_title">Japan Travel Tracker</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect width='24' height='24' fill='%23f6f4ef'/><path fill='%2315140e' d='M12 3c-3.3 0-6 2.7-6 6 0 4.5 6 11.5 6 11.5s6-7 6-11.5c0-3.3-2.7-6-6-6z'/><circle cx='12' cy='9.2' r='2.3' fill='%23f6f4ef'/></svg>">
     <link href="vendor/design-system/tokens.css" rel="stylesheet">
@@ -15,7 +14,7 @@
 <body>
     <!-- Icon sprite — design-system line set: 24px grid, 1.5px non-scaling stroke,
          square caps + miter joins, monochrome currentColor. -->
-    <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <svg width="0" height="0" class="icon-sprite" aria-hidden="true" focusable="false">
         <defs>
             <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s7-6.3 7-12a7 7 0 0 0-14 0c0 5.7 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></symbol>
             <symbol id="i-timeline" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></symbol>

@@ -77,6 +77,10 @@ body {
 a { color: var(--color-ink); text-decoration: underline; text-decoration-color: var(--color-accent); text-underline-offset: 3px; }
 a:hover { color: var(--color-accent); }
 
+/* Icon sprite <defs> holder — out of flow (was an inline style attribute,
+   moved here so the CSP can drop style-src 'unsafe-inline') */
+.icon-sprite { position: absolute; }
+
 /* Icons — true 1.5px stroke at every size (matches the UI hairline) */
 .ic {
   width: 18px; height: 18px;

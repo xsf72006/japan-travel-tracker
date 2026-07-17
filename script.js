@@ -533,7 +533,7 @@ function createJapanMap() {
     // Labels are inserted AFTER the SVG is in the DOM — getJapanExKanjiLabels reads
     // each prefecture via getElementById, so the shapes must exist first.
     const svgContent = '<svg version="1.1" id="japan-svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" ' +
-        'viewBox="280 -350 1220 1220" style="enable-background:new 280 -350 1220 1220;" xml:space="preserve">' +
+        'viewBox="280 -350 1220 1220" xml:space="preserve">' +
         '<g id="background">' +
         '<rect x="318" y="-317.5" fill="#f8f9fa" width="1147.5" height="1147.5"/>' +
         '</g>' +
