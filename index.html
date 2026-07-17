@@ -206,6 +206,26 @@
         </div>
     </dialog>
 
+    <!-- Prefecture Details Modal — history first; adding is an explicit action -->
+    <dialog id="detailsModal" class="modal" aria-labelledby="detailsModalTitle">
+        <div class="modal-content">
+            <header class="modal-head">
+                <h2 class="modal-title" id="detailsModalTitle"><span id="details-prefecture-name"></span></h2>
+                <button type="button" class="icon-btn" data-close aria-label="Close">
+                    <svg class="ic" aria-hidden="true"><use href="#i-close"/></svg>
+                </button>
+            </header>
+            <div class="modal-body">
+                <!-- vivid tier: visit pills must match the map's data ink -->
+                <div id="details-content" data-viz="vivid"><!-- Visit history generated here --></div>
+            </div>
+            <footer class="modal-foot">
+                <button type="button" class="btn secondary" data-close data-translate="close">Close</button>
+                <button type="button" class="btn primary" onclick="openAddVisit()" data-translate="add_visit">Add Visit</button>
+            </footer>
+        </div>
+    </dialog>
+
     <!-- Timeline Modal -->
     <dialog id="timelineModal" class="modal modal-lg" aria-labelledby="timelineModalTitle">
         <div class="modal-content">

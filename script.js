@@ -40,6 +40,7 @@ const translations = {
         'notes_optional': 'Notes (optional)',
         'notes_placeholder': 'Add any notes about this visit...',
         'cancel': 'Cancel',
+        'close': 'Close',
         'add_visit': 'Add Visit',
         'visit_timeline': 'Visit Timeline',
         'travel_statistics': 'Travel Statistics',
@@ -86,6 +87,7 @@ const translations = {
         'most_active_year': 'Most Active Year:',
         'none': 'None',
         'visits': 'visits',
+        'visit_singular': 'visit',
         'road_trip_text': 'Road Trip',
         
         // Region names
@@ -137,6 +139,7 @@ const translations = {
         'notes_optional': '備註 (可選)',
         'notes_placeholder': '新增此次到訪的備註...',
         'cancel': '取消',
+        'close': '關閉',
         'add_visit': '新增記錄',
         'visit_timeline': '到訪時間軸',
         'travel_statistics': '旅遊統計',
@@ -183,6 +186,7 @@ const translations = {
         'most_active_year': '最活躍年份：',
         'none': '無',
         'visits': '次到訪',
+        'visit_singular': '次到訪',
         'road_trip_text': '自駕遊',
         
         // Region names
@@ -361,6 +365,11 @@ document.addEventListener('DOMContentLoaded', function() {
     setupLanguageToggle();
     setupThemeToggle();
     setupModalDismiss();
+
+    // Selection outline lives only while a prefecture dialog is open.
+    ['detailsModal', 'visitModal'].forEach(id => {
+        document.getElementById(id).addEventListener('close', clearSelectionWhenDialogsClosed);
+    });
 
     // Set default year/month to the current date
     document.getElementById('visit-year').value = new Date().getFullYear();
@@ -1103,15 +1112,27 @@ function setupPrefectureInteractions() {
 
 
 
-// Tooltip functions
+// Tooltip functions — desktop hover shows a compact history preview so the
+// map can be explored without opening anything (touch devices tap instead).
 function showTooltip(event) {
     const prefecture = event.target.closest('.prefecture');
     if (!prefecture || !prefecture.id) return;
-    
+
     // Get localized prefecture name
     const name = getLocalizedPrefectureName(prefecture.id);
-    
-    tooltip.textContent = name;
+    const visits = visitData[prefecture.id] || [];
+
+    let summary;
+    if (visits.length === 0) {
+        summary = t('no_visits_recorded');
+    } else {
+        const latest = visits.reduce((a, b) =>
+            (b.year > a.year || (b.year === a.year && b.month > a.month)) ? b : a);
+        summary = visits.length + ' ' + (visits.length === 1 ? t('visit_singular') : t('visits')) +
+                  ' · ' + getLocalizedMonth(latest.month) + ' ' + latest.year;
+    }
+
+    tooltip.innerHTML = '<strong>' + escapeHtml(name) + '</strong><br>' + escapeHtml(summary);
     tooltip.classList.add('show');
     moveTooltip(event);
 }
@@ -1125,62 +1146,90 @@ function moveTooltip(event) {
     tooltip.style.top = (event.pageY - 10) + 'px';
 }
 
-// Prefecture Selection
+// Prefecture Selection — click/tap opens the history dialog; adding a visit
+// is an explicit button inside it (same interaction on desktop and touch).
 function selectPrefecture(prefectureId) {
     currentPrefecture = prefectureId;
-    const prefectureName = getLocalizedPrefectureName(prefectureId);
-    
-    // Mark the selected prefecture (rust outline via CSS)
+
+    // Mark the selected prefecture (rust outline via CSS) while its dialogs
+    // are open; cleared again by clearSelectionWhenDialogsClosed().
     document.querySelectorAll('.prefecture[data-selected]').forEach(el => el.removeAttribute('data-selected'));
     const selectedEl = document.getElementById(prefectureId);
     if (selectedEl) selectedEl.setAttribute('data-selected', 'true');
+    hideTooltip();
 
     // Update prefecture info panel
     updatePrefectureInfo(prefectureId);
 
-    // Show modal for adding new visit
-    document.getElementById('modal-prefecture-name').textContent = prefectureName;
+    showPrefectureDetails(prefectureId);
+}
+
+function showPrefectureDetails(prefectureId) {
+    document.getElementById('details-prefecture-name').textContent = getLocalizedPrefectureName(prefectureId);
+    document.getElementById('details-content').innerHTML = renderVisitListHTML(prefectureId);
+    document.getElementById('detailsModal').showModal();
+}
+
+// "+ Add Visit" button inside the details dialog → swap to the add-visit form.
+// The add dialog is opened BEFORE the details dialog closes so the selection
+// outline survives the hand-off (see clearSelectionWhenDialogsClosed).
+function openAddVisit() {
+    if (!currentPrefecture) return;
+    document.getElementById('modal-prefecture-name').textContent = getLocalizedPrefectureName(currentPrefecture);
     document.getElementById('visitModal').showModal();
+    document.getElementById('detailsModal').close();
+}
+
+// The rust selection outline means "a dialog about this prefecture is open".
+// Once both dialogs are closed there is nothing selected any more, so drop the
+// marker — otherwise a stale accent border lingers on the map indefinitely.
+function clearSelectionWhenDialogsClosed() {
+    if (document.getElementById('detailsModal').open) return;
+    if (document.getElementById('visitModal').open) return;
+    document.querySelectorAll('.prefecture[data-selected]').forEach(el => el.removeAttribute('data-selected'));
+}
+
+// Shared visit-list renderer used by the side panel and the details dialog.
+// Sorts in place so removeVisit() indexes always match the rendered order.
+function renderVisitListHTML(prefectureId) {
+    const visits = visitData[prefectureId] || [];
+
+    if (visits.length === 0) {
+        return '<p class="muted">' + t('no_visits_recorded') + '</p>';
+    }
+
+    let html = '<div class="prefecture-visits">';
+    visits.sort((a, b) => new Date(a.year, a.month) - new Date(b.year, b.month));
+
+    visits.forEach((visit, index) => {
+        const levelText = visit.level === 1 ? t('visited_option') : t('stayed_option');
+        const levelClass = visit.level === 1 ? 'visited' : 'stayed';
+        const monthName = getLocalizedMonth(visit.month);
+
+        html += '<div class="visit-item">' +
+                '<div class="visit-info">' +
+                '<span class="pill ' + levelClass + '"><span class="dot"></span>' + levelText + '</span>' +
+                (visit.roadTrip ? '<span class="pill road-trip">' + t('road_trip_text') + '</span>' : '') +
+                '<span class="visit-date">' + monthName + ' ' + visit.year + '</span>' +
+                '</div>' +
+                '<button class="icon-btn" aria-label="Remove" onclick="removeVisit(\'' + prefectureId + '\', ' + index + ')">' +
+                '<svg class="ic" aria-hidden="true"><use href="#i-delete"/></svg>' +
+                '</button>' +
+                '</div>';
+
+        if (visit.notes) {
+            html += '<div class="visit-notes">' + escapeHtml(visit.notes) + '</div>';
+        }
+    });
+
+    html += '</div>';
+    return html;
 }
 
 function updatePrefectureInfo(prefectureId) {
     const infoPanel = document.getElementById('prefecture-info');
-    const prefectureName = getLocalizedPrefectureName(prefectureId);
-    const visits = visitData[prefectureId] || [];
-    
-    let html = '<h3>' + escapeHtml(prefectureName) + '</h3>';
-
-    if (visits.length === 0) {
-        html += '<p class="muted">' + t('no_visits_recorded') + '</p>';
-    } else {
-        html += '<div class="prefecture-visits">';
-        visits.sort((a, b) => new Date(a.year, a.month) - new Date(b.year, b.month));
-
-        visits.forEach((visit, index) => {
-            const levelText = visit.level === 1 ? t('visited_option') : t('stayed_option');
-            const levelClass = visit.level === 1 ? 'visited' : 'stayed';
-            const monthName = getLocalizedMonth(visit.month);
-
-            html += '<div class="visit-item">' +
-                    '<div class="visit-info">' +
-                    '<span class="pill ' + levelClass + '"><span class="dot"></span>' + levelText + '</span>' +
-                    (visit.roadTrip ? '<span class="pill road-trip">' + t('road_trip_text') + '</span>' : '') +
-                    '<span class="visit-date">' + monthName + ' ' + visit.year + '</span>' +
-                    '</div>' +
-                    '<button class="icon-btn" aria-label="Remove" onclick="removeVisit(\'' + prefectureId + '\', ' + index + ')">' +
-                    '<svg class="ic" aria-hidden="true"><use href="#i-delete"/></svg>' +
-                    '</button>' +
-                    '</div>';
-
-            if (visit.notes) {
-                html += '<div class="visit-notes">' + escapeHtml(visit.notes) + '</div>';
-            }
-        });
-
-        html += '</div>';
-    }
-
-    infoPanel.innerHTML = html;
+    infoPanel.innerHTML = '<h3>' + escapeHtml(getLocalizedPrefectureName(prefectureId)) + '</h3>' +
+                          renderVisitListHTML(prefectureId);
 }
 
 // Visit Management
@@ -1238,6 +1287,11 @@ function removeVisit(prefectureId, index) {
         saveData();
         updateMapColors();
         updatePrefectureInfo(prefectureId);
+
+        // Deleting from the details dialog: re-render its list in place
+        if (document.getElementById('detailsModal').open) {
+            document.getElementById('details-content').innerHTML = renderVisitListHTML(prefectureId);
+        }
     }
 }
 
