@@ -365,6 +365,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setupLanguageToggle();
     setupThemeToggle();
     setupModalDismiss();
+    setupActionButtons();
 
     // Selection outline lives only while a prefecture dialog is open.
     ['detailsModal', 'visitModal'].forEach(id => {
@@ -418,6 +419,25 @@ function setupLanguageToggle() {
 function updateLanguageToggle() {
     document.querySelectorAll('.lang-toggle [data-lang]').forEach(btn => {
         btn.setAttribute('aria-pressed', String(btn.dataset.lang === currentLanguage));
+    });
+}
+
+// Topbar + modal actions, wired here instead of inline onclick attributes so
+// the CSP can enforce script-src 'self' without 'unsafe-inline'.
+function setupActionButtons() {
+    document.getElementById('timeline-btn').addEventListener('click', showTimeline);
+    document.getElementById('stats-btn').addEventListener('click', showStatistics);
+    document.getElementById('export-btn').addEventListener('click', exportData);
+    document.getElementById('import-btn').addEventListener('click', () => document.getElementById('import-file').click());
+    document.getElementById('import-file').addEventListener('change', importData);
+    document.getElementById('add-visit-btn').addEventListener('click', addVisit);
+    document.getElementById('details-add-btn').addEventListener('click', openAddVisit);
+
+    // Visit delete buttons are re-rendered with every list update (side panel
+    // and details dialog), so a single delegated listener covers them all.
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-remove-visit]');
+        if (btn) removeVisit(btn.dataset.pref, parseInt(btn.dataset.index, 10));
     });
 }
 
@@ -1212,7 +1232,7 @@ function renderVisitListHTML(prefectureId) {
                 (visit.roadTrip ? '<span class="pill road-trip">' + t('road_trip_text') + '</span>' : '') +
                 '<span class="visit-date">' + monthName + ' ' + visit.year + '</span>' +
                 '</div>' +
-                '<button class="icon-btn" aria-label="Remove" onclick="removeVisit(\'' + prefectureId + '\', ' + index + ')">' +
+                '<button class="icon-btn" aria-label="Remove" data-remove-visit data-pref="' + prefectureId + '" data-index="' + index + '">' +
                 '<svg class="ic" aria-hidden="true"><use href="#i-delete"/></svg>' +
                 '</button>' +
                 '</div>';

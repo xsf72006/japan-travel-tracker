@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Defense-in-depth: same-origin only. 'unsafe-inline' is required by the
-         inline onclick handlers (script) and style="" attributes (style);
+    <!-- Defense-in-depth: same-origin only. style-src keeps 'unsafe-inline'
+         for the style="" attributes on the SVG sprite/map markup;
          data: covers the inline SVG favicon. -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'self'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'self'">
     <title data-translate="page_title">Japan Travel Tracker</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect width='24' height='24' fill='%23f6f4ef'/><path fill='%2315140e' d='M12 3c-3.3 0-6 2.7-6 6 0 4.5 6 11.5 6 11.5s6-7 6-11.5c0-3.3-2.7-6-6-6z'/><circle cx='12' cy='9.2' r='2.3' fill='%23f6f4ef'/></svg>">
     <link href="vendor/design-system/tokens.css" rel="stylesheet">
@@ -38,23 +38,23 @@
         </a>
 
         <div class="topbar-actions">
-            <button type="button" class="btn ghost" onclick="showTimeline()">
+            <button type="button" class="btn ghost" id="timeline-btn">
                 <svg class="ic" aria-hidden="true"><use href="#i-timeline"/></svg>
                 <span data-translate="timeline">Timeline</span>
             </button>
-            <button type="button" class="btn ghost" onclick="showStatistics()">
+            <button type="button" class="btn ghost" id="stats-btn">
                 <svg class="ic" aria-hidden="true"><use href="#i-stats"/></svg>
                 <span data-translate="stats">Stats</span>
             </button>
-            <button type="button" class="btn ghost" onclick="exportData()">
+            <button type="button" class="btn ghost" id="export-btn">
                 <svg class="ic" aria-hidden="true"><use href="#i-export"/></svg>
                 <span data-translate="export">Export</span>
             </button>
-            <button type="button" class="btn ghost" onclick="document.getElementById('import-file').click()">
+            <button type="button" class="btn ghost" id="import-btn">
                 <svg class="ic" aria-hidden="true"><use href="#i-import"/></svg>
                 <span data-translate="import">Import</span>
             </button>
-            <input type="file" id="import-file" accept=".json" hidden onchange="importData(event)">
+            <input type="file" id="import-file" accept=".json" hidden>
 
             <div class="seg lang-toggle" role="group" aria-label="Language">
                 <button type="button" data-lang="en" aria-pressed="true">EN</button>
@@ -205,7 +205,7 @@
             </div>
             <footer class="modal-foot">
                 <button type="button" class="btn secondary" data-close data-translate="cancel">Cancel</button>
-                <button type="button" class="btn primary" onclick="addVisit()" data-translate="add_visit">Add Visit</button>
+                <button type="button" class="btn primary" id="add-visit-btn" data-translate="add_visit">Add Visit</button>
             </footer>
         </div>
     </dialog>
@@ -225,7 +225,7 @@
             </div>
             <footer class="modal-foot">
                 <button type="button" class="btn secondary" data-close data-translate="close">Close</button>
-                <button type="button" class="btn primary" onclick="openAddVisit()" data-translate="add_visit">Add Visit</button>
+                <button type="button" class="btn primary" id="details-add-btn" data-translate="add_visit">Add Visit</button>
             </footer>
         </div>
     </dialog>
